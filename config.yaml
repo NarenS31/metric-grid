@@ -41,6 +41,14 @@ census:
   svi_missing_value: -999     # treated as missing, warned, never zero-filled
   lodes_year: 2023            # latest LODES8 NC WAC file that returned HTTP 200 on 2026-10-18
 
+facilities:
+  # Hard exclusions (protected = True when a tract/zone contains one). Counted on 2026-10-18 against the 183 NC-08
+  # tracts: these three types protect 26 tracts (15.0% of housing units); adding fire + police would protect
+  # 73 tracts (42.6%), above the ~35% ceiling, so those are display-only. See docs/ASSUMPTIONS.md.
+  protected_types: ["hospital", "nursing_home", "water_treatment"]
+  # Kept in the data and shown on the map only; never excluded by the optimizer.
+  display_only_types: ["fire_station", "police", "wastewater_treatment"]
+
 zones:
   zone_mode: "substation"     # "substation" or "tract"; falls back to tract if HIFLD substations need auth (Phase 3)
   min_zone_area_km2: null     # TODO Phase 3: sliver threshold, documented

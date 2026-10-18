@@ -21,5 +21,20 @@ TBD Phase 4: full formula, symbols, sources, normalization, missing-data rules, 
 - **ACS vintage:** 2024 5-year (2020-2024), the latest returning data on 2026-10-18. **LODES:** LODES8 NC WAC, JT00 (all jobs), year 2023, the latest file returning HTTP 200. WAC rows are blocks; the first 11 digits of `w_geocode` give the tract (no crosswalk needed). Every NC-08 tract has at least 31 jobs, so no LODES gaps.
 - **B01001** (total population) is fetched for display only.
 
+## Protected-facility decision (2026-10-18, owner decisions)
+
+- **Protected (hard exclusion):** hospital, nursing_home, water_treatment. Set in `config.yaml` under `facilities.protected_types`.
+- **Display-only:** fire_station, police, wastewater_treatment. They stay in `facilities.geojson` and are drawn on the map but never set `protected`. `wastewater_treatment` was dropped from the protected list by decision (it was added beyond the spec in Phase 1). Fire and police are display-only because fire and police stations commonly have backup generation, and because protecting them leaves the optimizer too little room (below).
+- **Headroom check** (183 NC-08 tracts, 308,920 housing units, OSM facilities joined to tracts by point-in-polygon; 4 of the 164 OSM points fall outside every kept tract and are not counted):
+
+| Option | Protected tracts | Housing units in protected tracts |
+|---|---|---|
+| (a) hospitals + nursing homes + water treatment | 26 (14.2%) | 46,255 (15.0%) |
+| (b) (a) + fire + police | 73 (39.9%) | 131,454 (42.6%) |
+
+  (b) exceeds the ~35% ceiling, so (a) is the default. Fire stations alone cover 51 tracts (30.5% of housing units). For reference, the earlier list with wastewater would have protected 47 tracts (27.0%).
+- **Whole-tract attributes for partial tracts** stay as documented in the Phase 1 section. These counts are tract-level; the zone-level `protected` flag in Phase 3 will differ if zones are substation cells, and must be re-checked against the same ~35% ceiling.
+- OSM facility data is incomplete, so a protected tract can miss a real facility and the app must say so (rule 6).
+
 ## Data-source failures and fallbacks
 See the Phase 1 section above (two items: TIGER file name, HIFLD -> OSM).
