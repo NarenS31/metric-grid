@@ -6,6 +6,7 @@ pulp
 pandas
 pyarrow
 pydeck
+matplotlib
 requests
 pyyaml
 pytest

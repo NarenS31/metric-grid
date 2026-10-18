@@ -11,11 +11,30 @@ district:
   # Anson, Cabarrus, Mecklenburg, Montgomery, Richmond, Robeson, Scotland, Stanly, Union
   counties: ["007", "025", "119", "123", "153", "155", "165", "167", "179"]
 
-balancing_authority:
-  code: "DUK"                 # EIA-930 respondent. Source: EIA Open Data API v2, electricity/rto/region-data
-  # DUK-served counties used for W_DUK (district-scaling denominator).
-  # TODO Phase 3: list must be documented in docs/ASSUMPTIONS.md with a source. Do not guess.
-  ba_counties: []
+# Footprint groups: one per utility whose balancing-authority demand is scaled down to the district.
+# D_NC08 = sum over groups of D_g(07:00) * W_NC08_in_g / W_g, with a consistent modeled weight W.
+# Counties are assigned to groups from EIA Form 861 (Service_Territory + the BA Code in Sales_Ult_Cust); see
+# docs/ASSUMPTIONS.md. Nothing here is specific to NC-08: another district only needs another list.
+balancing_authorities:
+  - key: "DEC"
+    name: "Duke Energy Carolinas"
+    eia930_respondents: ["DUK"]             # EIA-930 BA code(s) whose hourly demand is summed
+    eia861_utility_numbers: ["5416"]        # EIA-861 Utility Number for Duke Energy Carolinas, LLC
+    eia861_ba_codes: ["DUK"]                # co-ops/municipals with this BA Code count as this group's load
+    shed_mw: 1000                           # max firm load shed
+    shed_source: "FERC-NERC Elliott report (Nov 2023) PDF p.71: DEC 400 MW at 6:27, 1,000 MW at 7:10; SC ORS report p.39 (PDF p.49): 400 MW directed 6:14, maintained 1,000 MW"
+  - key: "DEP"
+    name: "Duke Energy Progress"
+    eia930_respondents: ["CPLE", "CPLW"]    # Progress East + West; EIA-861 lists DEP as one utility
+    eia861_utility_numbers: ["3046"]
+    eia861_ba_codes: ["CPLE", "CPLW"]
+    shed_mw: 961
+    shed_source: "FERC-NERC Elliott report (Nov 2023) PDF p.71: DEP 600 MW at 6:25, 800 MW at 7:10, max 961 MW by 7:56; SC ORS report p.39 (PDF p.49) requests sum to the same 961 MW"
+
+# How a county served by more than one group is split between them. "customer_spread" (default): each utility's EIA-861
+# customers are spread over the counties it serves in proportion to housing units. "equal" and 0/1 extremes are
+# run as sensitivity cases.
+shared_county_rule: "customer_spread"
 
 scenario:
   name: "Winter Storm Elliott, Dec 24 2022, 07:00"
@@ -23,15 +42,16 @@ scenario:
   eia_window_start_utc: "2022-12-22T00:00"   # EIA-930 fetch range per spec (2022-12-22 to 2022-12-26)
   eia_window_end_utc: "2022-12-26T23:00"
   local_tz: "America/New_York"
-  shed_start_local: "06:14"   # Source: NCUC Docket M-100 Sub 163 (DEC load shed began 06:14)
+  shed_start_local: "06:14"   # SC ORS report p.39: DEC load shed directed 6:14 AM (DEP: 6:25 AM)
   reference_hour_local: "07:00"
-  shed_mw_regional: 1000      # Source: NCUC Docket M-100 Sub 163 (~1,000 MW shed by DEC). Regional, never used as NC-08 MW.
-  # r = shed_mw_regional / D_DUK(07:00); computed in Phase 2, never typed in.
+  # Per-group r_g = shed_mw / D_g(07:00), computed from balancing_authorities above, never typed in.
+  # Regional MW are never used as NC-08 MW.
 
 eia:
   api_url: "https://api.eia.gov/v2/electricity/rto/region-data/data/"
   api_key_env: "EIA_API_KEY"
   type: "D"
+  # respondents come from balancing_authorities[].eia930_respondents
   fallback: "EIA-930 bulk CSV, 2022 H2"
 
 census:

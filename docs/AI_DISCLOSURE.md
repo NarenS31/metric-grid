@@ -21,6 +21,8 @@ The "What I changed" column is the author's to fill in honestly before submissio
 | tests/test_scaffold.py | AI-scaffolded | TODO |
 | src/metric_grid/ingest/{common,district,acs,svi,lodes,hifld,facilities}.py, config.py (load_env) | AI-scaffolded (Claude Code) | TODO |
 | src/metric_grid/ingest/{eia930,noaa,resstock}.py, tests/test_phase2.py | AI-scaffolded (Claude Code) | TODO |
+| src/metric_grid/ingest/{footprints,xlsx_min}.py, src/metric_grid/model/load_allocation.py, src/metric_grid/figures.py, tests/test_footprints.py | AI-scaffolded (Claude Code) | TODO |
+| docs/figures/demand_elliott.png | AI-generated figure from project data | TODO |
 | tests/test_phase1.py | AI-scaffolded (Claude Code) | TODO |
 | src/metric_grid/** remaining modules | AI-scaffolded (empty stubs, no logic yet) | TODO |
 | firmware/metric_node/ (empty placeholders) | AI-scaffolded (empty) | Real firmware arrives later |

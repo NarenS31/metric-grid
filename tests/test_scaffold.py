@@ -11,5 +11,6 @@ def test_config_district_keys():
     cfg = load_config()
     assert cfg["district"]["state_fips"] == "37"
     assert cfg["district"]["district"] == "08"
-    assert cfg["balancing_authority"]["code"] == "DUK"
-    assert "ba_counties" in cfg["balancing_authority"]
+    keys = [g["key"] for g in cfg["balancing_authorities"]]
+    assert keys == ["DEC", "DEP"]
+    assert cfg["balancing_authorities"][1]["eia930_respondents"] == ["CPLE", "CPLW"]

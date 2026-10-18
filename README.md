@@ -17,7 +17,7 @@ When a utility can't meet demand it sheds load by opening breakers at substation
 1. Every number in the UI traces to a named source in a provenance drawer; allocated or inferred values carry an "estimated" or "modeled" badge.
 2. Zones are "synthetic analysis zones generated around public infrastructure points; not actual feeder boundaries." If substation data is unavailable, zones are census tracts, labeled as such.
 3. The baseline is the "load-only baseline" with a defined objective. It is not a description of what Duke does.
-4. District scaling comes first: `D_NC08 = D_DUK * W_NC08 / W_DUK_territory`, then `T_NC08 = D_NC08 * r`. Both are modeled district estimates. *The Elliott regional event anchors this scenario. NC-08 load and required reduction are modeled district-scale estimates, not observed utility circuit values.*
+4. District scaling comes first: `D_NC08 = sum over utilities g of D_g * W_NC08_in_g / W_g` (Duke Energy Carolinas and Duke Energy Progress both serve NC-08), then `T_NC08 = sum_g D_NC08_g * r_g`. Both are modeled district estimates. *The Elliott regional event anchors this scenario. NC-08 load and required reduction are modeled district-scale estimates, not observed utility circuit values.*
 5. Equal feasible target: Stage A finds the minimum feasible reduction `T*` ≥ `T_NC08`; Stage B holds the weighted plan to exactly `T*`. Infeasible requests produce an explanation with the maximum feasible value.
 6. Critical facilities are hard exclusions (`x_i = 0`) at zone level. This may protect more modeled load than necessary, and public facility datasets may be incomplete.
 7. No fabricated data. If a source fails, the failure and fallback are documented in `docs/ASSUMPTIONS.md` before continuing.
@@ -25,9 +25,17 @@ When a utility can't meet demand it sheds load by opening breakers at substation
 9. No claims of predicting failures, sensing the grid, verifying zones, or controlling utility equipment. A vocabulary lint test will enforce the project's banned-terms list (kept in `tests/`, Phase 4).
 10. `docs/AI_DISCLOSURE.md` is kept current for every file.
 
+## Version 2.0 ideas (not in this submission)
+
+- Utility feeder data and network constraints.
+- Cumulative-burden fairness across repeated events.
+- Consent-based sensor pilot and a thermal model of indoor temperature.
+- Stochastic scenarios.
+- Electric-heat share in the modeled load weight W (a cold morning raises load in electric-heat tracts; v1 uses housing units and jobs only).
+
 ## Status
 
-Phase 0 (scaffold) complete. Nothing is implemented yet; Makefile targets are stubs.
+Phases 0-2 complete (scaffold, district and census data, demand and load profiles, district scaling). Phase 3 (zones, allocation, freeze) is next; `make app` and `make demo` are still stubs.
 
 ## Layout
 

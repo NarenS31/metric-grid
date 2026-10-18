@@ -31,11 +31,33 @@ def test_eia_missing_value_raises_not_filled():
         eia930.parse_eia(p, "America/New_York")
 
 
-def test_reduction_ratio_formula():
+def _two_group_cfg():
     cfg = load_config()
-    df = eia930.parse_eia(_payload([20000] * 24), cfg["scenario"]["local_tz"])
-    r = eia930.reduction_ratio(df, cfg)
-    assert r["r"] == pytest.approx(cfg["scenario"]["shed_mw_regional"] / 20000)
+    cfg["scenario"]["date"] = "2022-12-24"
+    return cfg
+
+
+def _long(resp, values):
+    p = _payload(values)
+    for row in p["response"]["data"]:
+        row["respondent"] = resp
+    return eia930.parse_eia(p, "America/New_York")
+
+
+def test_reduction_ratios_per_group_and_sum_of_respondents():
+    cfg = _two_group_cfg()
+    df = pd.concat([_long("DUK", [20000] * 24), _long("CPLE", [12000] * 24), _long("CPLW", [2000] * 24)])
+    wide = eia930.group_demand(df, cfg)
+    r = eia930.reduction_ratios(wide, cfg)
+    assert r["DEC"]["r"] == pytest.approx(1000 / 20000)
+    assert r["DEP"]["demand_mw_0700"] == 14000  # CPLE + CPLW
+    assert r["DEP"]["r"] == pytest.approx(961 / 14000)
+
+
+def test_group_demand_missing_respondent_raises():
+    cfg = _two_group_cfg()
+    with pytest.raises(ValueError):
+        eia930.group_demand(_long("DUK", [1] * 24), cfg)
 
 
 def test_noaa_missing_rows_dropped_not_filled():
@@ -87,8 +109,9 @@ def test_reference_hour_mean_gap_raises():
         resstock.reference_hour_mean(df, "kwh", 7)
 
 
-@pytest.mark.skipif(not (PROCESSED / "eia930_duk.csv").exists(), reason="run `make data` first")
-def test_saved_eia_series_complete_and_peak_at_0700():
-    df = pd.read_csv(PROCESSED / "eia930_duk.csv", parse_dates=["period_utc"])
-    assert len(df) == 120 and df.demand_mw.notna().all()
-    assert df.demand_mw.max() == 20879  # Elliott morning peak, 2022-12-24 07:00 EST
+@pytest.mark.skipif(not (PROCESSED / "eia930_demand.csv").exists(), reason="run `make data` first")
+def test_saved_eia_series_complete_and_duk_peak_at_0700():
+    df = pd.read_csv(PROCESSED / "eia930_demand.csv", parse_dates=["period_utc"])
+    assert set(df.respondent) == {"DUK", "CPLE", "CPLW"}
+    assert (df.groupby("respondent").size() == 120).all() and df.demand_mw.notna().all()
+    assert df[df.respondent == "DUK"].demand_mw.max() == 20879  # Elliott morning peak, 2022-12-24 07:00 EST

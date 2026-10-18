@@ -4,13 +4,13 @@
 
 **Primary user:** a county emergency planner who wants to know whether two technically equal scenarios could burden vulnerable communities very differently, and leaves with zones to prioritize for outreach, warming centers, backup power. Not utility operators, not residents.
 
-**Anchor:** Winter Storm Elliott, Dec 24 2022, 07:00 (DEC shed ~1,000 MW from 06:14). Planning simulator, not a dispatcher, not Duke's method.
+**Anchor:** Winter Storm Elliott, Dec 24 2022, 07:00 (DEC shed 1,000 MW from 06:14; DEP shed up to 961 MW; sources in docs/DATA_SOURCES.md). Planning simulator, not a dispatcher, not Duke's method.
 
 ## 10 non-negotiable rules
 1. Every UI number traces to a named source in the provenance drawer; allocated/inferred values get an "estimated" or "modeled" badge.
 2. Voronoi cells = "synthetic analysis zones generated around public infrastructure points; not actual feeder boundaries." If no substation data, zones are census tracts, labeled so.
 3. Baseline = "load-only baseline" with a defined objective; never described as what Duke does.
-4. District scaling first: `D_NC08 = D_DUK * W_NC08 / W_DUK`, then `T_NC08 = D_NC08 * r`. Never allocate DUK demand or the regional reduction into NC-08 directly. UI must say: "The Elliott regional event anchors this scenario. NC-08 load and required reduction are modeled district-scale estimates, not observed utility circuit values."
+4. District scaling first (amended 2026-10-18 for two utilities, DEC and DEP): `D_NC08 = sum_g D_g * W_NC08_in_g / W_g`, then `T_NC08 = sum_g D_NC08_g * r_g`. Never allocate BA demand or the regional reduction into NC-08 directly. UI must say: "The Elliott regional event anchors this scenario. NC-08 load and required reduction are modeled district-scale estimates, not observed utility circuit values."
 5. Equal feasible target: Stage A finds min feasible `T*` >= `T_NC08`; Stage B holds the weighted plan to exactly `T*`. Infeasible request returns explanation + max feasible value, never a crash.
 6. Critical facilities are hard exclusions (`x_i = 0`) at zone level; UI notes this may over-protect and facility data may be incomplete.
 7. Never fabricate data. If a source fails: stop, state what failed and the fallback, document in docs/ASSUMPTIONS.md, then continue. No silent synthetic substitution.
