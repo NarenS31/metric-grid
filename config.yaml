@@ -1,0 +1,72 @@
+# METRIC-Grid configuration. Every constant lives here; no other file hard-codes
+# state, district, balancing authority, or counties. Values marked TODO are
+# placeholders to be resolved (and sourced) in the named phase.
+
+district:
+  state_fips: "37"            # Census FIPS, North Carolina
+  district: "08"              # CD119FP, NC-08 (119th Congress). Source: Census TIGER/Line 2024 tl_2024_us_cd119
+  tiger_year: 2024
+  tract_min_overlap: 0.5      # keep tract if centroid inside OR >=50% area overlap (Phase 1)
+  counties: []                # TODO Phase 1: derived from tract join, then printed and recorded here
+
+balancing_authority:
+  code: "DUK"                 # EIA-930 respondent. Source: EIA Open Data API v2, electricity/rto/region-data
+  # DUK-served counties used for W_DUK (district-scaling denominator).
+  # TODO Phase 3: list must be documented in docs/ASSUMPTIONS.md with a source. Do not guess.
+  ba_counties: []
+
+scenario:
+  name: "Winter Storm Elliott, Dec 24 2022, 07:00"
+  date: "2022-12-24"
+  eia_window_start_utc: "2022-12-22T00:00"   # EIA-930 fetch range per spec (2022-12-22 to 2022-12-26)
+  eia_window_end_utc: "2022-12-26T23:00"
+  local_tz: "America/New_York"
+  shed_start_local: "06:14"   # Source: NCUC Docket M-100 Sub 163 (DEC load shed began 06:14)
+  reference_hour_local: "07:00"
+  shed_mw_regional: 1000      # Source: NCUC Docket M-100 Sub 163 (~1,000 MW shed by DEC). Regional, never used as NC-08 MW.
+  # r = shed_mw_regional / D_DUK(07:00); computed in Phase 2, never typed in.
+
+eia:
+  api_url: "https://api.eia.gov/v2/electricity/rto/region-data/data/"
+  api_key_env: "EIA_API_KEY"
+  type: "D"
+  fallback: "EIA-930 bulk CSV, 2022 H2"
+
+census:
+  api_key_env: "CENSUS_API_KEY"
+  acs_year: null              # TODO Phase 1: latest ACS 5-year available; record exact vintage
+  svi_year: 2022              # CDC/ATSDR SVI 2022
+  svi_missing_value: -999     # treated as missing, warned, never zero-filled
+  lodes_year: null            # TODO Phase 1: latest LODES WAC year available
+
+zones:
+  zone_mode: "substation"     # "substation" or "tract"; falls back to tract if HIFLD substations need auth (Phase 3)
+  min_zone_area_km2: null     # TODO Phase 3: sliver threshold, documented
+
+harm:
+  w_svi: 0.7                  # judgment call, see docs/ASSUMPTIONS.md
+  w_eheat: 0.3                # judgment call
+  alpha_default: 0.5          # human <-> economic mix, UI-adjustable
+  h_hours: 1                  # outage duration h for the cost term; judgment call
+  # Interruption cost per event-hour, LBNL ICE Calculator 2.0. TODO Phase 4: fill with page cites. null = not yet sourced.
+  c_res: null
+  c_sector:
+    manufacturing: null       # LODES CNS05
+    retail: null              # LODES CNS07
+    health: null              # LODES CNS16
+    other: null
+
+optimizer:
+  solver: "CBC"
+  rel_tol: 1.0e-6
+  max_solve_seconds: 2.0
+  target_pcts: [10, 15, 20]   # % of modeled NC-08 load
+  target_pct_default: 15
+  alpha_grid: [0, 0.25, 0.5, 0.75, 1]
+  w_svi_grid: [0.5, 0.7, 0.9]
+
+demo_locations: []            # TODO Phase 4: fixed list of {label, lat, lon}; no live geocoder
+
+nodes:
+  enabled: false              # Phase 5 only; hides node panel when false
+  aggregates_path: "data/node_aggregates.parquet"

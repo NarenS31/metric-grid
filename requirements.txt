@@ -1,0 +1,16 @@
+streamlit
+geopandas
+shapely
+scipy
+pulp
+pandas
+pyarrow
+pydeck
+requests
+pyyaml
+pytest
+# Optional node (later):
+fastapi
+uvicorn
+httpx
+python-kasa
