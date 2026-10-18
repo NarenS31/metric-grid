@@ -7,7 +7,9 @@ district:
   district: "08"              # CD119FP, NC-08 (119th Congress). Source: Census TIGER/Line 2024 tl_2024_us_cd119
   tiger_year: 2024
   tract_min_overlap: 0.5      # keep tract if centroid inside OR >=50% area overlap (Phase 1)
-  counties: []                # TODO Phase 1: derived from tract join, then printed and recorded here
+  # Derived in Phase 1 from the tract selection (3-digit county FIPS under state_fips).
+  # Anson, Cabarrus, Mecklenburg, Montgomery, Richmond, Robeson, Scotland, Stanly, Union
+  counties: ["007", "025", "119", "123", "153", "155", "165", "167", "179"]
 
 balancing_authority:
   code: "DUK"                 # EIA-930 respondent. Source: EIA Open Data API v2, electricity/rto/region-data
@@ -34,10 +36,10 @@ eia:
 
 census:
   api_key_env: "CENSUS_API_KEY"
-  acs_year: null              # TODO Phase 1: latest ACS 5-year available; record exact vintage
+  acs_year: 2024              # ACS 5-year 2020-2024 (latest vintage returning data on 2026-10-18)
   svi_year: 2022              # CDC/ATSDR SVI 2022
   svi_missing_value: -999     # treated as missing, warned, never zero-filled
-  lodes_year: null            # TODO Phase 1: latest LODES WAC year available
+  lodes_year: 2023            # latest LODES8 NC WAC file that returned HTTP 200 on 2026-10-18
 
 zones:
   zone_mode: "substation"     # "substation" or "tract"; falls back to tract if HIFLD substations need auth (Phase 3)

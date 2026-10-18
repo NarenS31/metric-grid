@@ -19,7 +19,9 @@ The "What I changed" column is the author's to fill in honestly before submissio
 | docs/DATA_SOURCES.md, ASSUMPTIONS.md, AI_DISCLOSURE.md, VIDEO_SHOTLIST.md | AI-scaffolded | TODO |
 | src/metric_grid/config.py | AI-scaffolded | TODO |
 | tests/test_scaffold.py | AI-scaffolded | TODO |
-| src/metric_grid/** other modules | AI-scaffolded (empty stubs, no logic yet) | TODO |
+| src/metric_grid/ingest/{common,district,acs,svi,lodes,hifld,facilities}.py, config.py (load_env) | AI-scaffolded (Claude Code) | TODO |
+| tests/test_phase1.py | AI-scaffolded (Claude Code) | TODO |
+| src/metric_grid/** remaining modules | AI-scaffolded (empty stubs, no logic yet) | TODO |
 | firmware/metric_node/ (empty placeholders) | AI-scaffolded (empty) | Real firmware arrives later |
 | firmware/bus_check, bus_check2, i2c_scan | Author-written hardware tests (confirm) | |
-| firmware/ (Feather ESP32 V2 firmware + hw_test), server/, tools/outage_switch.py | AI-written with Claude; reviewed and hardware-tested by the author. Not yet in this repo; add rows when they land. | |
+| firmware/ (Feather ESP32 V2 firmware + hw_test), server/, tools/outage_switch.py | AI-written with Claude; reviewed by the author; hardware testing in progress. Not yet in this repo; add rows when they land. | |
