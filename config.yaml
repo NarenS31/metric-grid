@@ -49,6 +49,14 @@ facilities:
   # Kept in the data and shown on the map only; never excluded by the optimizer.
   display_only_types: ["fire_station", "police", "wastewater_treatment"]
 
+facilities:
+  # Hard exclusions (x_i = 0). Chosen from the tract-level check in docs/ASSUMPTIONS.md (2026-10-18):
+  # (a) hospital+nursing_home+water_treatment protects 26/183 tracts, 15.0% of housing units;
+  # (b) adding fire+police protects 73/183 tracts, 42.6% (> 35% threshold, too little room for plans to differ).
+  protected_types: ["hospital", "nursing_home", "water_treatment"]
+  # Shown on the map only, never excluded.
+  display_only_types: ["fire_station", "police", "wastewater_treatment"]
+
 zones:
   zone_mode: "substation"     # "substation" or "tract"; falls back to tract if HIFLD substations need auth (Phase 3)
   min_zone_area_km2: null     # TODO Phase 3: sliver threshold, documented
@@ -74,6 +82,26 @@ optimizer:
   target_pct_default: 15
   alpha_grid: [0, 0.25, 0.5, 0.75, 1]
   w_svi_grid: [0.5, 0.7, 0.9]
+
+weights:
+  # How commercial load per job is set in W. "state": ComStock NC total / NC LODES jobs (default).
+  # "county": ComStock county total / that county's LODES jobs. County values swing 5x (0.64-3.49 kW/job) because
+  # ComStock county models have artifacts (e.g. Robeson full-service restaurants ~69 MW), so state is the default
+  # and county is a sensitivity case. See docs/ASSUMPTIONS.md.
+  commercial_scope: "state"
+
+nrel:
+  # NREL End-Use Load Profiles, public OEDI bucket. The old nrel-pds-building-stock bucket now only holds comstock/athena;
+  # the data moved to oedi-data-lake (found by listing the bucket, 2026-10-18).
+  s3_base: "https://oedi-data-lake.s3.amazonaws.com"
+  root: "nrel-pds-building-stock/end-use-load-profiles-for-us-building-stock/2024"
+  resstock_release: "resstock_amy2018_release_2"   # only state-level aggregates exist (no by_county); NC state used
+  comstock_release: "comstock_amy2018_release_2"   # by_county aggregates exist
+  # Coldest 7 days of the AMY2018 weather year, from the Mecklenburg county weather file
+  # (weather/amy2018/G3701190_2018.csv): 7-day mean 2018-01-01..07 = -4.8 C, min -11.7 C (Jan 2). Elliott morning was ~10 F (-12 C).
+  cold_week_start: "2018-01-01"
+  cold_week_days: 7
+  reference_hour_local: 7     # hour starting 07:00 local standard time (EULP timestamps are period-ending, EST)
 
 demo_locations: []            # TODO Phase 4: fixed list of {label, lat, lon}; no live geocoder
 

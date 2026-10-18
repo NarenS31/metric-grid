@@ -9,9 +9,9 @@ Each entry gets: name, URL, dataset date/vintage, retrieval date, what it is use
 | CDC/ATSDR SVI 2022 | vulnerability percentiles | https://svi.cdc.gov/Documents/Data/2022/csv/states/NorthCarolina.csv | 2022 | downloaded 2026-10-18 |
 | LEHD LODES8 WAC (NC, JT00) | jobs by sector | https://lehd.ces.census.gov/data/lodes/LODES8/nc/wac/nc_wac_S000_JT00_2023.csv.gz | 2023 | downloaded 2026-10-18 |
 | OpenStreetMap via Overpass (HIFLD Open unavailable, see ASSUMPTIONS.md) | critical facilities | https://overpass-api.de/api/interpreter | pulled 2026-10-18 | downloaded; incomplete coverage |
-| EIA-930 (DUK) | regional hourly demand | TBD Phase 2 | 2022-12 | pending |
-| NCUC Docket M-100 Sub 163 | ~1,000 MW shed, 06:14 start | TBD Phase 2 | 2022-2023 | pending |
-| NREL ResStock / ComStock | load-shape weights | TBD Phase 2 | AMY2018 | pending |
-| NOAA KCLT | display-only temperature | TBD Phase 2 | 2022-12 | pending |
+| EIA-930 region-data, respondent DUK (Duke Energy Carolinas), type D | regional hourly demand | https://api.eia.gov/v2/electricity/rto/region-data/data/ | 2022-12-22..26 | downloaded 2026-10-18 |
+| NCUC Docket M-100 Sub 163 | ~1,000 MW shed, 06:14 start (value taken from the project spec; author to attach the exact filing page before submission) | NCUC docket search, Docket M-100 Sub 163 (exact URL not verified; author to add) | 2022-2023 | cited, not downloaded |
+| NREL End-Use Load Profiles: ResStock AMY2018 release 2 (NC state), ComStock AMY2018 release 2 (NC state, counties) | load per housing unit / per job | https://oedi-data-lake.s3.amazonaws.com/nrel-pds-building-stock/end-use-load-profiles-for-us-building-stock/2024/ | AMY2018, release 2 (2024) | cold week downloaded 2026-10-18 |
+| KCLT ASOS hourly temperature via Iowa Environmental Mesonet (NOAA NCEI was unavailable) | display only | https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py | 2022-12-23..25 | downloaded 2026-10-18 |
 | HIFLD Electric Substations | zone generating points | TBD Phase 3 | TBD | pending |
 | LBNL ICE Calculator 2.0 | interruption cost per sector | TBD Phase 4 | TBD | pending |
