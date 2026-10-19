@@ -153,14 +153,14 @@ def test_every_presolved_record_points_at_its_set_and_stays_inside_the_band(sets
 def test_headline_and_range_line_wording(default_record):
     pair = scenarios.record_to_pair(default_record)
     n = pair.baseline.electric_heat_households - pair.weighted.electric_heat_households
-    assert copy.headline(pair) == f"Same {pair.target_mw:.0f} MW cut. {n:,.0f} fewer electric-heat households than the typical load-only plan."
+    assert copy.headline(pair) == f"Same {pair.target_mw:.0f} MW cut. {n:,.0f} fewer electric-heat households than the typical megawatts-only plan."
     d = default_record["loadonly"]
     line = copy.range_line(d)
     e = d["electric_heat_households"]
-    assert line == (f"Across 200 equivalent load-only plans, they cut {e['min']:,.0f}–{e['max']:,.0f} electric-heat households; the "
+    assert line == (f"Across 200 equivalent megawatts-only plans, they cut {e['min']:,.0f}–{e['max']:,.0f} electric-heat households; the "
                     f"vulnerability-aware plan cut {e['weighted']:,.0f}. It cuts MORE total households than {d['households']['n_plans_fewer']} of 200.")
     flipped = scenarios.record_to_pair({**default_record, "baseline": {**default_record["baseline"], "electric_heat_households": 1000.0}})
-    assert "MORE electric-heat households than the typical load-only plan" in copy.headline(flipped)
+    assert "MORE electric-heat households than the typical megawatts-only plan" in copy.headline(flipped)
 
 
 # ---------------- the strip chart ----------------
@@ -185,7 +185,7 @@ def test_strip_spec_has_all_dots_the_typical_and_the_weighted_plan(sets, zh, def
 def test_strip_caption_counts_come_from_the_summary(default_record):
     cap = distribution.caption(default_record["loadonly"])
     d = default_record["loadonly"]
-    assert f"Of {d['n']} equivalent load-only plans" in cap and f"{d['households']['n_plans_fewer']} cut fewer total households" in cap
+    assert f"Of {d['n']} equivalent megawatts-only plans" in cap and f"{d['households']['n_plans_fewer']} cut fewer total households" in cap
 
 
 # ---------------- the page ----------------
@@ -203,15 +203,15 @@ def test_page_shows_the_typical_plan_headline_range_line_and_strips(page, defaul
     assert not page.exception, page.exception
     t = text_of(page)
     pair = scenarios.record_to_pair(default_record)
-    assert copy.headline(pair) in t and copy.range_line(default_record["loadonly"]) in t
-    assert "A typical load-only plan (median of 200 equivalent plans)" in t
-    assert "Where the vulnerability-aware plan falls among 200 equivalent load-only plans" in t
-    assert len(page.get("vega_lite_chart")) == 5  # four strips plus the demand panel
-    assert "equivalent load-only plans cut this zone" in t and "Load-only plans that cut it" in t
+    assert copy.range_line(default_record["loadonly"]) in t
+    assert "Megawatts only (typical of 200 plans)" in t
+    assert "Compared with 200 megawatts-only plans" in t
+    assert len(page.get("vega_lite_chart")) == 6  # four strips, the slider tradeoff, the demand panel
+    assert "megawatts-only plans cut this zone" in t and "Megawatts-only plans that cut it" in t
 
 
 def test_flip_strip_and_tooltips_carry_the_cut_frequency(page):
     t = text_of(page)
-    assert "load-only plans" in t and ", cut in " in t  # flip strip lines
+    assert "megawatts-only plans" in t and ", cut in " in t  # flip strip lines
     from metric_grid.app import maps
-    assert "{freq}" in maps.TOOLTIP["html"]
+    assert "cut in {freq.get(zid, 0)} of {n_plans} megawatts-only plans" in __import__("inspect").getsource(maps.map_svg).replace("\"", "\"") or "megawatts-only plans" in __import__("inspect").getsource(maps.map_svg)

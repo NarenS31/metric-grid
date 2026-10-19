@@ -18,7 +18,7 @@ STATES = {  # file -> (query string, text that proves the state rendered)
     "app_alpha1": ("?alpha=1", "Same"),
     "app_alpha0": ("?alpha=0", "Same"),
     "app_cap_on": ("?cap=1", "No county takes more than"),
-    "app_zone_detail": ("?zone=23", "H_human"),
+    "app_zone_detail": ("?zone=23", "at-risk score"),
 }
 BANNED = ["privacy-preserving", "federated learning", "AI optimizer", "conventional plan", "circuit", "feeder", "service area",
           "neighborhood demand", "least harm", "outage plan"]
@@ -59,7 +59,7 @@ def main() -> int:
             page.goto(BASE + query, wait_until="domcontentloaded")
             page.wait_for_selector(".headline", timeout=60000)
             page.get_by_text(proof).first.wait_for(timeout=60000)
-            page.wait_for_timeout(5000)  # let the deck.gl canvases draw
+            page.wait_for_timeout(3000)  # let the page settle
             sw = page.evaluate("[document.documentElement.scrollWidth, document.documentElement.clientWidth]")
             text = page.inner_text("body")
             text_all = page.evaluate("document.body.textContent")
@@ -71,7 +71,7 @@ def main() -> int:
             # Crop to the part of the page that tells the story, at full width, so the PNG stays legible under the size limit:
             # the top ~1,900 px (headline, maps, distribution strips) for every state except the zone detail (the cards row).
             if name == "app_zone_detail":
-                box = page.get_by_text("Zone detail", exact=True).first.bounding_box()
+                box = page.get_by_text("Look up a zone", exact=True).first.bounding_box()
                 clip = {"x": 0, "y": max(box["y"] - 40, 0), "width": 1440, "height": 780}
             else:
                 clip = {"x": 0, "y": 0, "width": 1440, "height": 1900}
@@ -89,6 +89,22 @@ def main() -> int:
                 problems.append(f"{name}: banned words {hits}")
             if external:
                 problems.append(f"{name}: external requests {sorted(external)}")
+            page.close()
+        # v2 page shots: first screen at 1440x900, the whole page at 1440, the first screen at a 390 px phone
+        for fname, (w, h), full in (("app_v2_first_screen.png", (1440, 900), False), ("app_v2_full_page.png", (1440, 900), True),
+                                    ("app_v2_phone_first_screen.png", (390, 844), False)):
+            page = browser.new_page(viewport={"width": w, "height": h})
+            page.goto(BASE, wait_until="domcontentloaded")
+            page.wait_for_selector("svg.map", timeout=60000)
+            page.wait_for_timeout(3000)
+            if full:
+                height = page.evaluate("document.querySelector('[data-testid=stMain]').scrollHeight")
+                page.set_viewport_size({"width": w, "height": int(height) + 50})
+                page.wait_for_timeout(3000)
+            page.screenshot(path=str(out / fname))
+            sw = page.evaluate("[document.documentElement.scrollWidth, document.documentElement.clientWidth]")
+            if sw[0] > sw[1] + 1:
+                problems.append(f"{fname}: horizontal scroll {sw}")
             page.close()
         browser.close()
     for png in sorted(out.glob("app_*.png")):

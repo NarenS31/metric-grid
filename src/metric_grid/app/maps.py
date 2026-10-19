@@ -1,85 +1,98 @@
-"""pydeck maps: no basemap and no tile servers (offline); same view for both maps; district outline; hatched protected zones."""
-import json
+"""Maps as inline SVG: no WebGL, no JavaScript, no basemap, no tile servers, no external requests (works offline in any browser).
+
+Zones are census tracts projected to a flat plane (x scaled by cos of the district's mid-latitude); geometry is simplified a little
+for page weight (tolerance about 150 m, well below the size of a tract). Hover text is the SVG <title> of each zone.
+"""
+import html
 import math
-import urllib.parse
 
 import geopandas as gpd
 import numpy as np
-import pydeck as pdk
-from shapely.geometry import LineString, mapping
+from shapely.geometry import LineString
+from shapely.geometry.base import BaseGeometry
 
-LAV, VIO, CUT, NODATA = np.array([240, 235, 252]), np.array([70, 40, 170]), (22, 18, 31), (205, 200, 215)
-INK = [28, 26, 36]
-
-
-def svi_rgb(v) -> list[int]:
-    """Lavender (low SVI) to deep violet (high SVI); lightness is monotonic so it also reads in greyscale."""
-    if v is None or (isinstance(v, float) and math.isnan(v)):
-        return list(NODATA)
-    t = float(min(max(v, 0.0), 1.0)) ** 0.9
-    return [int(x) for x in LAV + (VIO - LAV) * t]
+WIDTH = 1000.0          # viewBox width; height follows the district's aspect ratio
+SIMPLIFY_DEG = 0.0015
+INK, VIOLET, NEUTRAL_CUT = "#1C1A24", "#5B3FD6", "#2B2833"
+KEPT_LIGHT, KEPT_DARK, NODATA = np.array([245, 242, 236]), np.array([196, 188, 176]), "#E4E0E8"
 
 
-def view_state(district: gpd.GeoDataFrame, width_px: int = 640, height_px: int = 520) -> pdk.ViewState:
-    """One fixed view that fits the district; both maps use it."""
-    minx, miny, maxx, maxy = district.total_bounds
-    lon_span, lat_span = maxx - minx, maxy - miny
-    zoom_x = math.log2(360 * width_px / (256 * lon_span))
-    zoom_y = math.log2(170 * height_px / (256 * lat_span * 1.15))
-    return pdk.ViewState(longitude=(minx + maxx) / 2, latitude=(miny + maxy) / 2, zoom=min(zoom_x, zoom_y) - 0.15, pitch=0, bearing=0)
+def kept_rgb(svi) -> str:
+    """Warm light grey (low SVI) to a deeper warm grey (high SVI); lightness is monotonic, so it also reads in greyscale."""
+    if svi is None or (isinstance(svi, float) and math.isnan(svi)):
+        return NODATA
+    t = float(min(max(svi, 0.0), 1.0))
+    r, g, b = (int(x) for x in KEPT_LIGHT + (KEPT_DARK - KEPT_LIGHT) * t)
+    return f"#{r:02x}{g:02x}{b:02x}"
 
 
-def hatch_features(zones: gpd.GeoDataFrame, spacing: float = 0.0045) -> list[dict]:
-    """Diagonal hatch lines clipped to each protected zone (deck.gl has no fill patterns, so draw real lines)."""
-    feats = []
+class Projector:
+    """lon/lat -> SVG x/y for one district; one projector shared by both maps so they have the same extent."""
+
+    def __init__(self, district: gpd.GeoDataFrame, pad: float = 0.01):
+        minx, miny, maxx, maxy = district.total_bounds
+        self.minx, self.maxy = minx - pad, maxy + pad
+        self.cos = math.cos(math.radians((miny + maxy) / 2))
+        self.scale = WIDTH / ((maxx - minx + 2 * pad) * self.cos)
+        self.height = round((maxy - miny + 2 * pad) * self.scale, 1)
+
+    def xy(self, lon: float, lat: float) -> tuple[float, float]:
+        return (lon - self.minx) * self.cos * self.scale, (self.maxy - lat) * self.scale
+
+    def path(self, geom: BaseGeometry, simplify: float = SIMPLIFY_DEG) -> str:
+        """SVG path data for a (multi)polygon or (multi)line, one decimal place."""
+        g = geom.simplify(simplify, preserve_topology=True) if simplify else geom
+        parts = []
+        for part in getattr(g, "geoms", [g]):
+            rings = [part.exterior, *part.interiors] if part.geom_type == "Polygon" else [part]
+            for ring in rings:
+                pts = [self.xy(x, y) for x, y in ring.coords]
+                parts.append("M" + "L".join(f"{x:.1f} {y:.1f}" for x, y in pts) + ("Z" if part.geom_type == "Polygon" else ""))
+        return "".join(parts)
+
+
+def hatch_geometry(zones: gpd.GeoDataFrame, spacing: float = 0.0045) -> list[BaseGeometry]:
+    """Diagonal hatch lines clipped to each protected zone (drawn as real lines, so the hatching survives any renderer)."""
+    out = []
     for g in zones.loc[zones["protected"], "geometry"]:
         minx, miny, maxx, maxy = g.bounds
         c = miny - maxx
         while c < maxy - minx:
             line = LineString([(minx - 1, minx - 1 + c), (maxx + 1, maxx + 1 + c)]).intersection(g)
             if not line.is_empty:
-                feats.append({"type": "Feature", "properties": {}, "geometry": mapping(line)})
+                out.append(line)
             c += spacing
-    return feats
+    return out
 
 
-def zone_collection(zones: gpd.GeoDataFrame, cut_ids: set, plan_name: str, freq: dict | None = None, n_plans: int = 0) -> dict:
-    """GeoJSON FeatureCollection with fill/line colours and tooltip text per zone for one plan."""
-    feats = []
+def static_layers(zones: gpd.GeoDataFrame, district: gpd.GeoDataFrame) -> dict:
+    """Everything that does not depend on the plan, computed once: projector, zone paths, hatch path, district outline path."""
+    proj = Projector(district)
+    return {"proj": proj, "zone_paths": {int(r.zone_id): proj.path(r.geometry) for r in zones.itertuples()},
+            "hatch": "".join(proj.path(g, simplify=0) for g in hatch_geometry(zones)),
+            "outline": "".join(proj.path(g) for g in district.geometry)}
+
+
+def map_svg(zones: gpd.GeoDataFrame, layers: dict, cut_ids: set, cut_color: str, plan_name: str, map_id: str,
+            freq: dict | None = None, n_plans: int = 0, label: str = "") -> str:
+    """One map. Cut zones solid `cut_color`; kept-on zones light grey (deeper = more vulnerable); protected zones carry a hatch."""
+    paths = []
     for r in zones.itertuples():
-        cut = r.zone_id in cut_ids
-        status = "CUT" if cut else ("protected (never cut)" if r.protected else "kept on")
-        feats.append({"type": "Feature", "geometry": mapping(r.geometry), "properties": {
-            "fill": list(CUT) + [235] if cut else svi_rgb(r.RPL_THEMES) + [225],
-            "line": [250, 247, 242] if not r.protected else INK, "lw": 1 if not r.protected else 1500,  # metres; min 1 px
-            "zone": f"Zone {r.zone_id}", "county": r.COUNTY, "status": f"{status} ({plan_name})",
-            "freq": f"cut in {freq.get(r.zone_id, 0)} of {n_plans} load-only plans" if freq is not None else "",
-            "load": f"{r.L_mw:.1f} MW (modeled)", "svi": "n/a" if np.isnan(r.RPL_THEMES) else f"{r.RPL_THEMES:.2f}",
-            "heat": "n/a" if np.isnan(r.share_electric_heat) else f"{r.share_electric_heat:.0%}", "hh": f"{r.occupied_units:,.0f}"}})
-    return {"type": "FeatureCollection", "features": feats}
-
-
-TOOLTIP = {"html": "<b>{zone}</b> · {county}<br/>{status}<br/>{freq}<br/>Est. load: {load}<br/>SVI: {svi}<br/>Electric heat: {heat}<br/>Households: {hh}",
-           "style": {"backgroundColor": "#1C1A24", "color": "#FAF7F2", "fontSize": "12px", "fontFamily": "sans-serif"}}
-
-
-# A style with no sources: Streamlit's frontend otherwise falls back to Carto tiles fetched from the internet (offline rule).
-# Passed as a data: URL string because Streamlit's frontend calls string methods on mapStyle (a dict crashes the component).
-_BLANK = {"version": 8, "name": "blank", "sources": {}, "layers": [
-    {"id": "bg", "type": "background", "paint": {"background-color": "#FAF7F2"}}]}
-BLANK_STYLE = "data:application/json;charset=utf-8," + urllib.parse.quote(json.dumps(_BLANK, separators=(",", ":")))
-
-
-def build_deck(zone_fc: dict, hatch: list[dict], district_geojson: dict, vs: pdk.ViewState) -> pdk.Deck:
-    """Layers: zones, hatch on protected zones, NC-08 outline. Map controller is off so both maps stay at the same extent."""
-    # Widths: `line_width_min_pixels` sets the on-screen minimum; `get_line_width` is in metres (about 575 m per pixel at this zoom).
-    # (line_width_units="pixels" renders huge in this deck.gl version, so it is not used.)
-    zones = pdk.Layer("GeoJsonLayer", zone_fc, pickable=True, stroked=True, filled=True, get_fill_color="properties.fill",
-                      get_line_color="properties.line", get_line_width="properties.lw", line_width_min_pixels=1,
-                      auto_highlight=True, highlight_color=[91, 63, 214, 90])
-    hatching = pdk.Layer("GeoJsonLayer", {"type": "FeatureCollection", "features": hatch}, stroked=True, filled=False,
-                         get_line_color=INK + [200], get_line_width=1, line_width_min_pixels=1, pickable=False)
-    outline = pdk.Layer("GeoJsonLayer", district_geojson, stroked=True, filled=False, get_line_color=[91, 63, 214, 255],
-                        get_line_width=1200, line_width_min_pixels=2.5, pickable=False)
-    return pdk.Deck(layers=[zones, hatching, outline], initial_view_state=vs, map_provider="carto", map_style=BLANK_STYLE,
-                    tooltip=TOOLTIP, views=[pdk.View(type="MapView", controller=False)])
+        zid = int(r.zone_id)
+        cut = zid in cut_ids
+        status = "CUT" if cut else ("protected, never cut" if r.protected else "kept on")
+        svi = "n/a" if np.isnan(r.RPL_THEMES) else f"{r.RPL_THEMES:.2f}"
+        heat = "n/a" if np.isnan(r.share_electric_heat) else f"{r.share_electric_heat:.0%}"
+        tip = [f"Zone {zid} · {r.COUNTY}", f"{status} ({plan_name})"]
+        if freq is not None and n_plans:
+            tip.append(f"cut in {freq.get(zid, 0)} of {n_plans} megawatts-only plans")
+        tip.append(f"Est. load {r.L_mw:.1f} MW (modeled) · SVI {svi} · electric heat {heat} · {r.occupied_units:,.0f} households")
+        fill = cut_color if cut else kept_rgb(r.RPL_THEMES)
+        paths.append(f'<path d="{layers["zone_paths"][zid]}" fill="{fill}" stroke="#FFFDF9" stroke-width="1.2" '
+                     f'stroke-linejoin="round"><title>{html.escape(chr(10).join(tip))}</title></path>')
+    hatch = f'<path d="{layers["hatch"]}" fill="none" stroke="{INK}" stroke-width="0.8" stroke-opacity="0.75" pointer-events="none"/>'
+    outline = f'<path d="{layers["outline"]}" fill="none" stroke="{VIOLET}" stroke-width="3" stroke-linejoin="round" pointer-events="none"/>'
+    h = layers["proj"].height
+    return (f'<svg class="map" id="{map_id}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {WIDTH:.0f} {h}" role="img" '
+            f'aria-label="{html.escape(label)}" preserveAspectRatio="xMidYMid meet"><rect width="{WIDTH:.0f}" height="{h}" fill="#FAF7F2"/>'
+            + "".join(paths) + hatch + outline + "</svg>")

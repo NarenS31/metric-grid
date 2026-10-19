@@ -4,6 +4,5 @@ geopandas==1.2.0
 shapely==2.2.0
 pandas==3.0.6
 numpy==2.4.6
-pydeck==0.9.3
 pulp==3.3.2
 PyYAML==6.0.3

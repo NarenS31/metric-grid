@@ -44,24 +44,29 @@ def default_page():
 def test_default_state_renders_offline(default_page):
     at = default_page
     assert not at.exception, at.exception
-    assert len(at.get("deck_gl_json_chart")) == 2  # two maps
+    text = page_text(at)
+    assert text.count("<svg class=\"map\"") == 2 and "deck_gl" not in str(at.get("deck_gl_json_chart"))  # two inline SVG maps, no WebGL
 
 
 def test_headline_and_honest_line_use_live_numbers(default_page):
     text = page_text(default_page)
     rec = [r for r in frozen.load_presolved() if r["target_key"] == "elliott" and r["alpha"] == 0.5 and not r["cap"]][0]
     pair = scenarios.record_to_pair(rec)
-    assert copy.headline(pair) in text  # "Same 92 MW cut. 3,353 fewer electric-heat households in the dark."
+    assert "Same power cut. Different people in the dark." in text
+    for tile in (f"{pair.target_mw:.0f} MW", f"{pair.baseline.electric_heat_households - pair.weighted.electric_heat_households:,.0f}",
+                 f"+{pair.weighted.households - pair.baseline.households:,.0f}"):
+        assert f"<div class='v'>{tile}</div>" in text  # the four stat tiles, the honest one included
+    assert "more total homes cut" in text
     assert scenarios.plain_summary(pair) in text and "MORE households" in text  # never hidden
-    assert "Same target, different burden." in text and "not an operational switching tool" in text
+    assert "not an operational switching tool" in text
 
 
 def test_required_district_sentence_and_labels_present(default_page):
     text = page_text(default_page)
     assert provenance.DISTRICT_SENTENCE in text
-    for label in ("Modeled scenario", "North Carolina's 8th District", "A typical load-only plan (median of 200 equivalent plans)", "Vulnerability-aware plan",
+    for label in ("NC-08 · Modeled scenario", "Megawatts only (typical of 200 plans)", "Vulnerability-aware", "Compared with 200 megawatts-only plans", "Look up a zone", "Why forecasts aren't enough",
                   "not Duke's method", "not an operational switching tool", "census tracts, not utility boundaries",
-                  "Both plans cut between", "2013 dollars", "Vulnerable zones most often cut when only megawatts count", "How robust is this?", "Flip strip"):
+                  "Both plans cut between", "2013 dollars", "Vulnerable zones most often cut when only megawatts count", "How robust is this?"):
         assert label in text, label
 
 
@@ -78,17 +83,17 @@ def test_priority_card_matches_sensitivity_output(default_page):
         assert f"<tr><td>{rec['zone_id']}</td>" in text
         assert f"{rec['loadonly_cut_share']:.0%} ({rec['loadonly_cut_count']} of 200)" in text
         assert f"{'Yes' if rec['vuln_aware_cuts'] else 'No'} (cut in {rec['vuln_aware_cut_settings']} of {rec['n_settings']} settings)" in text
-    for col in ("% of load-only plans that cut it", "Vulnerability-aware plan cuts it?"):
+    for col in ("% of megawatts-only plans that cut it", "Vulnerability-aware plan cuts it?"):
         assert col in text
-    assert "not a uniform sample of all load-only plans, so these frequencies are indicative" in text
-    assert ">SVI</span> of 0.75 or more, or an electric-heat share of 50% or more" in text
+    assert "not a uniform sample of all such plans, so these frequencies are indicative" in text
+    assert "CDC Social Vulnerability Index (SVI) of 0.75 or more, or an electric-heat share of 50% or more" in text
 
 
 def test_robustness_card_counts_come_from_the_table(default_page):
     import pandas as pd
     rows = pd.DataFrame(frozen.load_sensitivity()["rows"])
     n, beat = len(rows), int((rows["human_change_pct"] < 0).sum())
-    assert f"<b>{beat} of {n}</b> settings beat the typical load-only plan on human harm" in page_text(default_page)
+    assert f"<b>{beat} of {n}</b> settings beat the typical megawatts-only plan on vulnerability-weighted households" in page_text(default_page)
 
 
 def test_every_number_kind_has_a_source_in_the_drawer(default_page):
@@ -108,7 +113,7 @@ def test_reset_button_restores_defaults():
     at = AppTest.from_file(APP, default_timeout=120).run()
     at.select_slider(key="alpha").set_value(1.0).run()
     assert at.session_state["alpha"] == 1.0
-    [b for b in at.button if b.label == "Reset demo"][0].click().run()
+    [b for b in at.button if b.label == "Reset"][0].click().run()
     assert at.session_state["alpha"] == 0.5 and at.session_state["cap"] is False
 
 
@@ -125,7 +130,7 @@ def test_cap_toggle_uses_presolved_capped_record():
     at.query_params["cap"] = "1"
     at.run()
     assert not at.exception
-    assert "No county takes more than 50% of either plan's cut." in page_text(at)
+    assert "No county takes more than 50% of either plan's cut" in page_text(at)
     assert "Showing nearest pre-computed setting" not in page_text(at)
 
 
@@ -134,7 +139,7 @@ def test_zone_detail_shows_formula_with_numbers():
     at.query_params["zone"] = "23"
     at.run()
     code = "\n".join(c.value for c in at.code)
-    assert "H_human = N x (0.7 x SVI + 0.3 x heat)" in code and "(2013 dollars)" in code and "L = D_NC08" in code
+    assert "at-risk score = households x (0.7 x SVI + 0.3 x heat)" in code and "(2013 dollars)" in code and "district load x" in code
     assert "census tract zone" in page_text(at) and "load: modeled" in page_text(at)
 
 
@@ -172,14 +177,14 @@ def test_nearest_prefers_same_cap_setting():
 def test_zone_detail_opens_on_top_priority_zone_by_default(default_page):
     top = frozen.load_sensitivity()["priority_list"][0]["zone_id"]
     text = page_text(default_page)
-    assert f"**Zone {top}**" in text and "H_human = N x (0.7 x SVI + 0.3 x heat)" in text
+    assert f"**Zone {top}**" in text and "at-risk score = households x (0.7 x SVI + 0.3 x heat)" in page_text(default_page)
 
 
 def test_zone_detail_empty_state_when_no_zone_selected():
     at = AppTest.from_file(APP, default_timeout=120)
     at.query_params["zone"] = "0"
     at.run()
-    assert not at.exception and "Select a zone to see its inputs and the harm formula" in page_text(at)
+    assert not at.exception and "Select a zone to see its inputs and the formula" in page_text(at)
 
 
 def test_example_locations_each_inside_a_zone_of_the_right_county():

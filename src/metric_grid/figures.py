@@ -1,4 +1,4 @@
-"""Static PNG figures for docs and README (matplotlib, Agg backend). The app itself uses pydeck/streamlit."""
+"""Static PNG figures for docs and README (matplotlib, Agg backend). The app itself uses inline SVG maps and Streamlit."""
 import matplotlib
 
 matplotlib.use("Agg")

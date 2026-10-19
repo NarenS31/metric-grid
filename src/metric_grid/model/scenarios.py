@@ -19,7 +19,7 @@ def plain_summary(r: PairResult) -> str:
               f"cuts {abs(dh):,.0f} fewer households ({100 * dh / b.households:+.0f}%)" if dh < 0 else "cuts the same number of households")
     human_txt = f"{abs(human):.0f}% {'fewer' if human < 0 else 'more'} vulnerability-weighted households"
     econ_txt = f"{abs(econ):.0f}% {'lower' if econ < 0 else 'higher'} modeled interruption cost (2013 dollars)"
-    return f"The vulnerability-aware plan {people} than the typical load-only plan, but {human_txt} and {econ_txt}."
+    return f"The vulnerability-aware plan {people} than the typical megawatts-only plan, but {human_txt} and {econ_txt}."
 
 
 def run_scenarios(zones: pd.DataFrame, cfg: dict, kw_per_job: float, d_nc08: float, sets: dict, alpha: float | None = None) -> dict:

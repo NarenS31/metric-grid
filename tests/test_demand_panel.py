@@ -98,7 +98,7 @@ def test_panel_is_on_the_default_page_with_labels(page, panel):
     text = page_text(page)
     assert "Why forecasts aren't enough" in text and LABEL in text
     assert dp.sentence(panel, dp.total_shed_mw(frozen.load_constants())) in text
-    assert len(page.get("vega_lite_chart")) == 5  # four distribution strips plus this panel
+    assert len(page.get("vega_lite_chart")) == 6  # four distribution strips, the slider tradeoff chart, plus this panel
     assert "<td>109</td>" in text
 
 
@@ -130,8 +130,8 @@ def test_panel_hides_itself_if_its_frozen_file_is_missing(monkeypatch, tmp_path)
     at = _app_with_modified_frozen(monkeypatch, tmp_path, lambda d: (d / "demand_panel.json").unlink())
     assert not at.exception
     text = page_text(at)
-    assert "Why forecasts aren't enough" not in text and "Vulnerable zones most often cut when only megawatts count" in text and "Same target, different burden." in text
-    assert len(at.get("vega_lite_chart")) == 4  # only the four distribution strips remain
+    assert "Why forecasts aren't enough" not in text and "Vulnerable zones most often cut when only megawatts count" in text and "Same power cut. Different people in the dark." in text
+    assert len(at.get("vega_lite_chart")) == 5  # the four distribution strips and the tradeoff chart remain
 
 
 def test_panel_hides_itself_if_its_file_is_unreadable(monkeypatch, tmp_path):

@@ -1,46 +1,65 @@
-"""Editorial look: warm off-white, dark ink, serif headline, one violet accent. No external fonts or assets (offline)."""
+"""Editorial look: warm off-white, dark ink, one serif for headings, one sans for text, violet only for the vulnerability-aware plan
+and key numbers. Four font sizes (40/28 serif, 16/13 sans; 28/16 on a phone) on an 8 px spacing scale. No external fonts or assets (offline)."""
 INK, BG, ACCENT, MUTED = "#1C1A24", "#FAF7F2", "#5B3FD6", "#6B6678"
 
 CSS = f"""
 <style>
-:root {{ --ink:{INK}; --bg:{BG}; --accent:{ACCENT}; --muted:{MUTED}; --line:#E3DCCF; --card:#FFFDF9; }}
+:root {{ --ink:{INK}; --bg:{BG}; --accent:{ACCENT}; --muted:{MUTED}; --line:#E3DCCF; --card:#FFFDF9; --neutral:#2B2833;
+  --s1:8px; --s2:16px; --s3:24px; --s4:32px; --s6:48px; --s8:64px; --h1:40px; --h2:28px; --body:16px; --small:13px; }}
 .stApp {{ background: var(--bg); color: var(--ink); }}
-header[data-testid="stHeader"], footer, #MainMenu, [data-testid="stToolbar"], [data-testid="stDecoration"] {{ display:none !important; }}
-.block-container {{ max-width: 1360px; padding: 1.1rem 2rem 3rem 2rem; }}
-html, body, [class*="css"], .stMarkdown, p, li, label, span, div {{ font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }}
+header[data-testid="stHeader"], footer, #MainMenu, [data-testid="stToolbar"], [data-testid="stDecoration"],
+[data-testid="stAppDeployButton"], [data-testid="stStatusWidget"], [data-testid="stBaseButton-header"] {{ display:none !important; }}
+.block-container {{ max-width: 1200px; padding: var(--s1) var(--s3) var(--s8) var(--s3); margin: 0 auto; }}
+[data-testid="stVerticalBlock"] {{ gap: var(--s2); }}
+html, body, .stApp, .stMarkdown, p, li, label, span, div, td, th, button, input {{ font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }}
+html, body {{ overflow-x:hidden; font-size: var(--body); }}
+p, li, label, td {{ font-size: var(--body); line-height: 1.5; }}
 h1, h2, h3, .serif {{ font-family: Georgia, "Times New Roman", serif !important; color: var(--ink); letter-spacing: -0.01em; }}
-.topbar {{ display:flex; align-items:center; gap:.7rem; padding-bottom:.6rem; border-bottom:1px solid var(--line); flex-wrap:wrap; }}
-.brand {{ font-family: Georgia, serif; font-size:1.35rem; font-weight:700; margin-right:.4rem; }}
-.pill {{ display:inline-block; padding:.18rem .7rem; border-radius:999px; font-size:.78rem; border:1px solid var(--line); background:var(--card); color:var(--ink); }}
-.pill.accent {{ background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }}
-.tagline {{ color:var(--muted); font-size:.85rem; margin:.45rem 0 0 0; }}
-.eyebrow {{ color:var(--accent); text-transform:uppercase; letter-spacing:.09em; font-size:.78rem; font-weight:700; margin:1.4rem 0 .3rem 0; }}
-.headline {{ font-family: Georgia, "Times New Roman", serif; font-size:2.55rem; line-height:1.12; font-weight:700; margin:0 0 .6rem 0; }}
-.honest {{ font-size:1.05rem; line-height:1.45; border-left:4px solid var(--accent); padding:.15rem 0 .15rem .9rem; margin:.2rem 0 .7rem 0; }}
-.scaling {{ color:var(--muted); font-size:.82rem; margin:.2rem 0; }}
-[data-testid="stVerticalBlockBorderWrapper"] {{ background: var(--card); border:1px solid var(--line) !important; border-radius:14px; }}
-.maptitle {{ font-family: Georgia, serif; font-size:1.25rem; font-weight:700; margin:.2rem 0 .1rem 0; }}
-.mapsub {{ color:var(--muted); font-size:.82rem; margin-bottom:.3rem; }}
-.metric {{ border-top:2px solid var(--ink); padding:.35rem 0 .2rem 0; }}
-.metric .v {{ font-family: Georgia, serif; font-size:1.45rem; font-weight:700; line-height:1.1; }}
-.metric .l {{ color:var(--muted); font-size:.74rem; text-transform:uppercase; letter-spacing:.05em; }}
-.metric .s {{ color:var(--muted); font-size:.74rem; }}
-.note {{ background:#F1ECFB; border:1px solid #D9CFF5; border-radius:10px; padding:.5rem .8rem; font-size:.86rem; margin:.4rem 0; }}
-.legend {{ display:flex; gap:1rem; align-items:center; font-size:.76rem; color:var(--muted); flex-wrap:wrap; margin:.2rem 0 .6rem 0; }}
-.sw {{ display:inline-block; width:.95rem; height:.95rem; border-radius:3px; vertical-align:middle; margin-right:.3rem; border:1px solid #0002; }}
-.flip {{ font-size:.86rem; line-height:1.35; padding:.35rem 0; border-bottom:1px solid var(--line); }}
-.flipcol h4 {{ font-family:Georgia,serif; margin:.2rem 0 .4rem 0; font-size:1.05rem; }}
-.tip {{ border-bottom:1px dotted var(--muted); cursor:help; }}
+.topbar {{ display:flex; align-items:center; gap:var(--s2); padding-bottom:var(--s1); flex-wrap:wrap; }}
+.brand {{ font-family: Georgia, serif; font-size: var(--body); font-weight:700; letter-spacing:.02em; }}
+.pill {{ display:inline-block; padding:2px var(--s2); border-radius:999px; font-size: var(--small); border:1px solid var(--line); background:var(--card); }}
+.headline {{ font-family: Georgia, "Times New Roman", serif; font-size: var(--h1); line-height:1.15; font-weight:700; margin: var(--s1) 0 var(--s1) 0; }}
+.subhead {{ color: var(--muted); font-size: var(--body); margin: 0 0 var(--s1) 0; }}
+.tiles {{ display:grid; grid-template-columns:repeat(4,1fr); gap: var(--s2); margin-bottom: var(--s1); }}
+.tile {{ background: var(--card); border:1px solid var(--line); border-radius:12px; padding: 12px var(--s2); }}
+.tile .v {{ font-family: Georgia, serif; font-size: var(--h2); font-weight:700; line-height:1.1; color: var(--accent); }}
+.tile .l {{ font-size: var(--body); line-height:1.3; margin-top: 4px; }}
+.tile .s {{ font-size: var(--small); color: var(--muted); margin-top: 4px; }}
+.maptitle {{ font-family: Georgia, serif; font-size: var(--body); font-weight:700; margin: 0; padding-bottom: var(--s1); line-height:1.3; }}
+.maptitle.v {{ color: var(--accent); }}
+.mapnums {{ font-size: var(--small); color: var(--muted); margin: 0; text-align:center; }}
+svg.map {{ width:100%; height:auto; max-height: 336px; margin: 0 auto; display:block; border-radius:12px; border:1px solid var(--line); }}
+.legend {{ display:flex; gap: var(--s2); align-items:center; font-size: var(--small); color: var(--muted); flex-wrap:wrap; margin: var(--s1) 0; }}
+.sw {{ display:inline-block; width:12px; height:12px; border-radius:3px; vertical-align:middle; margin-right:4px; border:1px solid #0002; }}
+.fine {{ color: var(--muted); font-size: var(--small); margin: var(--s1) 0; }}
+.sec {{ margin-top: var(--s8); }}
+.sec h2 {{ font-family: Georgia, serif !important; font-size: var(--h2); font-weight:700; margin: 0 0 var(--s1) 0; padding:0; }}
+.sec p.lede {{ color: var(--muted); font-size: var(--body); margin: 0 0 var(--s3) 0; max-width: 760px; }}
+.honest {{ border-left:4px solid var(--accent); padding: 4px var(--s2); margin: 0 0 var(--s2) 0; }}
+[data-testid="stVerticalBlockBorderWrapper"] {{ background: var(--card); border:1px solid var(--line) !important; border-radius:12px; }}
+.note {{ background:#F1ECFB; border:1px solid #D9CFF5; border-radius:8px; padding: var(--s1) var(--s2); font-size: var(--small); margin: var(--s1) 0; }}
 .note.warn {{ background:#FFF3E0; border-color:#F2C98A; }}
-.cap {{ color:var(--muted); font-size:.84rem; margin:.3rem 0; }}
-.badge {{ display:inline-block; padding:.12rem .55rem; border-radius:6px; font-size:.72rem; background:#EFE9DD; margin-right:.3rem; }}
+.flip {{ font-size: var(--small); line-height:1.4; padding: var(--s1) 0; border-bottom:1px solid var(--line); }}
+.flipcol h4 {{ font-family:Georgia,serif; margin: var(--s1) 0; font-size: var(--body); }}
+.tip {{ border-bottom:1px dotted var(--muted); cursor:help; }}
+.badge {{ display:inline-block; padding:2px var(--s1); border-radius:6px; font-size: var(--small); background:#EFE9DD; margin-right: var(--s1); }}
 .badge.v {{ background:#E9E2FB; color:#3B2A92; }}
-table.t {{ border-collapse:collapse; width:100%; font-size:.84rem; }}
-table.t th {{ text-align:left; color:var(--muted); font-weight:600; border-bottom:2px solid var(--ink); padding:.3rem .4rem; font-size:.74rem; text-transform:uppercase; letter-spacing:.04em; }}
-table.t td {{ border-bottom:1px solid var(--line); padding:.35rem .4rem; vertical-align:top; }}
-code, pre {{ font-size:.82rem !important; background:#F4EFE5 !important; }}
-.stApp [data-testid="stSlider"] [role="slider"] {{ background:var(--accent); }}
+table.t {{ border-collapse:collapse; width:100%; }}
+table.t th {{ text-align:left; color: var(--muted); font-weight:600; border-bottom:2px solid var(--ink); padding: var(--s1); font-size: var(--small); }}
+table.t td {{ border-bottom:1px solid var(--line); padding: var(--s1); vertical-align:top; font-size: var(--small); }}
+code, pre {{ font-size: var(--small) !important; background:#F4EFE5 !important; }}
+/* controls bar */
+.stApp [data-testid="stSlider"] [role="slider"] {{ background: var(--accent); }}
+[data-testid="stSliderThumbValue"], [data-testid="stSliderTickBarMin"], [data-testid="stSliderTickBarMax"] {{ display:none !important; }}
+[data-testid="stCaptionContainer"], .stCaption {{ font-size: var(--small); }}
 iframe, canvas {{ max-width:100%; }}
-html, body {{ overflow-x:hidden; }}
+@media (max-width: 700px) {{
+  :root {{ --h1: 28px; --h2: 28px; }}
+  .block-container {{ padding-left: var(--s2); padding-right: var(--s2); }}
+  .tiles {{ grid-template-columns:repeat(2,1fr); gap: var(--s1); }}
+  .tile {{ padding: var(--s1) 12px; }}
+  .tile .l {{ font-size: var(--small); }}
+  .sec {{ margin-top: var(--s6); }}
+}}
 </style>
 """

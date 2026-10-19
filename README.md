@@ -109,7 +109,7 @@ Claude and Claude Code (Anthropic) scaffolded and wrote most of this repository,
 
 ## Open-source software used
 
-Runtime (`requirements.txt`): Streamlit (the app), GeoPandas and shapely (geometry), pandas and NumPy (tables), PuLP with the CBC solver (optimization), pydeck (maps), PyYAML (config). Development (`requirements-dev.txt`): pytest (tests), matplotlib (static figures), requests (data downloads), Playwright (screenshots).
+Runtime (`requirements.txt`): Streamlit (the app), GeoPandas and shapely (geometry), pandas and NumPy (tables), PuLP with the CBC solver (optimization), PyYAML (config). Development (`requirements-dev.txt`): pytest (tests), matplotlib (static figures), requests (data downloads), Playwright (screenshots).
 
 Optional hardware prototype (ESP32 outage + indoor temperature logger) is in progress and not part of this submission.
 

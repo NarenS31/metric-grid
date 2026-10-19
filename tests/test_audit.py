@@ -51,7 +51,7 @@ def test_ai_disclosure_lists_every_tracked_file():
     assert "hardware testing in progress" in doc
 
 
-NUM_ALLOW = {"0", "1", "2", "5", "10", "23", "0,", "2013", "2022", "65", "08", "861", "930"}  # label facts, deep-link example, dataset names
+NUM_ALLOW = {"0", "1", "2", "5", "10", "23", "0,", "2013", "2022", "65", "08", "08.", "861", "930"}  # label facts, deep-link example, dataset names
 
 
 def test_app_strings_contain_no_typed_model_numbers():
@@ -98,7 +98,8 @@ def _zh():
 def test_shotlist_numbers_and_code_match_reality(default_pair):
     s = (ROOT / "docs" / "VIDEO_SHOTLIST.md").read_text()
     from metric_grid.app import copy
-    assert copy.headline(default_pair) in s
+    assert "Same power cut. Different people in the dark." in s
+    assert f"{default_pair.baseline.electric_heat_households - default_pair.weighted.electric_heat_households:,.0f} fewer electric-heat homes" in s
     assert f"cuts {default_pair.weighted.households - default_pair.baseline.households:,.0f} MORE households" in s
     import pandas as pd
     rows = pd.DataFrame(frozen.load_sensitivity()["rows"])
