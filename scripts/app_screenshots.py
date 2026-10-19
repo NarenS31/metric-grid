@@ -8,6 +8,7 @@ import re
 import sys
 from pathlib import Path
 
+from PIL import Image
 from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -23,6 +24,26 @@ BANNED = ["privacy-preserving", "federated learning", "AI optimizer", "conventio
           "neighborhood demand", "least harm", "outage plan"]
 REQUIRED_SENTENCE = ("The Elliott regional event anchors this scenario. NC-08 load and required reduction are modeled "
                      "district-scale estimates, not observed utility circuit values.")
+
+
+LIMIT_BYTES = 300_000
+
+
+def compress_png(path: Path, limit: int = LIMIT_BYTES) -> int:
+    """Shrink a screenshot to under `limit` bytes: palette-quantize (fewer colors until it fits), then scale down if still too big.
+    UI screenshots have flat colors, so this loses almost nothing visible. Returns the final size in bytes."""
+    img = Image.open(path).convert("RGB")
+    scale = 1.0
+    while True:
+        work = img if scale == 1.0 else img.resize((int(img.width * scale), int(img.height * scale)), Image.LANCZOS)
+        for colors in (128, 96, 64, 48, 32):
+            q = work.quantize(colors=colors, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE)
+            q.save(path, optimize=True)
+            if path.stat().st_size <= limit:
+                return path.stat().st_size
+        scale *= 0.85
+        if scale < 0.4:
+            return path.stat().st_size
 
 
 def main() -> int:
@@ -63,6 +84,9 @@ def main() -> int:
                 problems.append(f"{name}: external requests {sorted(external)}")
             page.close()
         browser.close()
+    for png in sorted(out.glob("app_*.png")):
+        size = compress_png(png)
+        report.setdefault("compressed_bytes", {})[png.name] = size
     print(json.dumps(report, indent=1))
     print("PROBLEMS:", problems or "none")
     return 1 if problems else 0

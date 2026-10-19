@@ -102,7 +102,7 @@ def test_shotlist_numbers_and_code_match_reality(default_pair):
     assert f"cuts {default_pair.weighted.households - default_pair.baseline.households:,.0f} MORE households" in s
     import pandas as pd
     rows = pd.DataFrame(frozen.load_sensitivity()["rows"])
-    assert f"{int((rows['human_change_pct'] < 0).sum())} of {len(rows)} settings beat the baseline on human harm" in s
+    assert f"{int((rows['human_change_pct'] < 0).sum())} of {len(rows)} settings beat the typical plan on human harm" in s
     top = frozen.load_sensitivity()["priority_list"][0]["zone_id"]
     assert f"I tried {len(rows)} settings" in s and f"(zone {top} is open)" in s
     # every excerpt line on the shot list exists in optimizer.py, and block 1 is contiguous there
@@ -225,3 +225,36 @@ def test_hour_ending_wording_is_used_wherever_the_reference_hour_is_named():
     assert "hour ending 07:00" in (ROOT / "README.md").read_text() + (ROOT / "docs/VIDEO_SHOTLIST.md").read_text()
     c = frozen.load_constants()
     assert "hour ending 07:00" in c["r_definition"] and "hour ending 07:00" in c["scenario"]["name"]
+
+
+# ---------------- load-only plan set commitments (2026-10-19) ----------------
+
+def test_readme_states_the_plan_set_and_its_range_from_the_model():
+    readme = (ROOT / "README.md").read_text()
+    rec = [r for r in frozen.load_presolved() if r["target_key"] == "elliott" and r["alpha"] == 0.5 and not r["cap"]][0]
+    d = rec["loadonly"]
+    e = d["electric_heat_households"]
+    assert f"{d['n']} equivalent load-only plans" in readme and "typical load-only plan" in readme
+    assert f"{e['min']:,.0f} to {e['max']:,.0f}" in readme
+    assert f"MORE total households ({rec['weighted']['households'] - rec['baseline']['households']:+,.0f} vs the typical plan, and more than {d['households']['n_plans_fewer']} of {d['n']} plans)" in readme
+
+
+def test_docs_describe_the_plan_set_and_the_spec_row_exists():
+    a = (ROOT / "docs" / "ASSUMPTIONS.md").read_text()
+    assert "## Baseline plan instability and the load-only plan set" in a and "fixed seed 20261019" in a
+    assert "closest to the median on all four displayed measures" in a and "NOT a uniform sample" in a
+    spec = (ROOT / "docs" / "SPEC.md").read_text().split("You are building")[0]
+    assert "set of 200 equivalent load-only plans" in spec
+    assert "no single baseline" in (ROOT / "CLAUDE.md").read_text().lower() or "no single load-only baseline" in (ROOT / "CLAUDE.md").read_text()
+
+
+def test_app_screenshots_are_compressed():
+    shots = sorted((ROOT / "docs" / "figures").glob("app_*.png"))
+    assert len(shots) >= 6
+    for p in shots:
+        assert p.stat().st_size < 300_000, (p.name, p.stat().st_size)
+
+
+def test_loadonly_plans_file_is_present_and_small_enough_to_commit():
+    f = ROOT / "data" / "frozen" / "loadonly_plans.json"
+    assert f.exists() and f.stat().st_size < 1_000_000

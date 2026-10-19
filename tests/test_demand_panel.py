@@ -98,7 +98,7 @@ def test_panel_is_on_the_default_page_with_labels(page, panel):
     text = page_text(page)
     assert "Why forecasts aren't enough" in text and LABEL in text
     assert dp.sentence(panel, dp.total_shed_mw(frozen.load_constants())) in text
-    assert len(page.get("vega_lite_chart")) == 1
+    assert len(page.get("vega_lite_chart")) == 5  # four distribution strips plus this panel
     assert "<td>109</td>" in text
 
 
@@ -131,7 +131,7 @@ def test_panel_hides_itself_if_its_frozen_file_is_missing(monkeypatch, tmp_path)
     assert not at.exception
     text = page_text(at)
     assert "Why forecasts aren't enough" not in text and "Where to plan first" in text and "Same target, different burden." in text
-    assert len(at.get("vega_lite_chart")) == 0
+    assert len(at.get("vega_lite_chart")) == 4  # only the four distribution strips remain
 
 
 def test_panel_hides_itself_if_its_file_is_unreadable(monkeypatch, tmp_path):

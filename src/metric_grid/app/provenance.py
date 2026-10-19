@@ -15,6 +15,8 @@ UI_SOURCES = {
     "Reduction ratio r (each utility's maximum firm load shed, MW)": ("sourced, regional", ["SC Office of Regulatory Staff", "FERC-NERC"]),
     "Demand panel (predicted vs actual DUK+CPLE demand, error by temperature)": ("modeled demand estimate; not a utility forecast",
         ["EIA-930", "KCLT"]),
+    "Load-only plan set (the N equivalent plans, their ranges and counts)": ("modeled; generated with a fixed seed",
+        ["Census ACS", "LEHD LODES", "NREL", "EIA-930", "LBNL"]),
     "Zone boundaries": ("census tract zones, not utility boundaries", ["Census TIGER"]),
     "Harm weights, alpha, band width, county cap": ("judgment calls set in config.yaml", []),
 }

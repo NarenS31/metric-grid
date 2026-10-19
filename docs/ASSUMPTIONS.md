@@ -46,96 +46,107 @@ Both plans use the same band: T_NC08 <= sum x_i L_i <= T_NC08 + delta, delta = 2
 - **Run time.** Default scenario (T_NC08, 183 zones): about 0.5 to 0.6 s for both plans. The 10, 15 and 20% presets take 2 to 3 s (Stage A's tie-break solve dominates); the app must pre-solve those, see Phase 4 step 5. Tests assert under 2 s for the default.
 - **Bug found by tests:** PuLP ignores `upBound` on Binary variables, so an early version selected protected zones. The hard exclusion is now an explicit `x_i == 0` constraint and tests cover it.
 
-**Default scenario result (alpha = 0.5, band 91.93 to 93.77 MW, about 0.6 s):**
+**Default scenario result (alpha = 0.5, band 91.93 to 93.77 MW), against the load-only plan set (N = 200):**
 
-| | Load-only baseline | Harm-weighted plan |
-|---|---|---|
-| MW cut (overshoot) | 91.93 (0.00) | 92.20 (0.27) |
-| Zones cut | 6 | 10 |
-| Households | 15,593 | 17,956 |
-| Electric-heat households | 10,029 | 5,484 |
-| Vulnerability-weighted households | 7,578 | 2,053 (-73%) |
-| Interruption cost (1 h, 2013$) | $432,943 | $264,733 (-39%) |
+| | Typical load-only plan | Range over the 200 load-only plans | Vulnerability-aware plan |
+|---|---|---|---|
+| MW cut (overshoot) | 92.25 (0.32) | 91.93 to 92.85 | 92.20 (0.27) |
+| Zones cut | 11 | | 10 |
+| Households | 15,413 | 13,387 to 17,458 | 17,956 |
+| Electric-heat households | 8,896 | 6,874 to 11,454 | 5,484 |
+| Vulnerability-weighted households | 7,741 | 4,784 to 11,116 | 2,053 (-73% vs typical) |
+| Interruption cost (1 h, 2013$) | $417,615 | $260,199 to $731,161 | $264,733 (-37% vs typical) |
 
-16 zones differ between the plans. The harm-weighted plan cuts more households (+2,363) but less vulnerable ones (mean SVI 0.03 vs 0.43). Band sensitivity (1%, 2%, 5%): identical plans, so the harm difference survives. Alpha sweep: at alpha 0 (economic only) the weighted plan imposes +55% human harm while changing economic cost by -66%; at alpha 1 it changes human harm by -82% and cost by +5%.
+The vulnerability-aware plan has fewer electric-heat households than all 200 of 200 load-only plans, fewer vulnerability-weighted households than 200 of 200, lower interruption cost than 199 of 200, and MORE total households cut than 200 of 200 (+2,543 vs the typical plan). 21 zones differ from the typical plan; the vulnerability-aware plan's mean SVI is 0.03 vs 0.49. Alpha sweep: at alpha 0 (economic only) the weighted plan imposes +52% human harm while changing economic cost by -65%; at alpha 1 it changes human harm by -83% and cost by +9% (all vs the typical plan).
 
 ## Sensitivity, scenarios, pre-solved grid (Phase 4 steps 3-4; all in data/frozen/)
 
 **Spec deviation (approved 2026-10-18): the demo safety-net grid is pre-solved at `make freeze`, not at app startup.** The 10/15/20% presets take 2 to 3 s per solve, so solving 15 points at startup would take about 40 s. `presolved.json` holds 20 points: alpha {0, .25, .5, .75, 1} x targets {Elliott T_NC08, 10%, 15%, 20% of D_NC08}; the Elliott row is added because it is the default scenario. The app falls back to the nearest point (with a visible "showing nearest pre-computed setting" note) if a live solve errors or exceeds 2 s.
 
-**Sensitivity settings (20, weighted plan vs load-only baseline at T_NC08 = 91.9 MW):** alpha {0, .25, .5, .75, 1} x w_svi {.5, .7, .9} (15); band 1% and 5% (2% is in the grid); Small C&I cost rate; flat allocation weights (1 per housing unit + 1 per job instead of 5.26 and 1.34 kW, renormalized to the same D_NC08; this also changes the baseline); county-share cap 50% (below; also changes the baseline).
+**Sensitivity settings (20, vulnerability-aware plan vs the TYPICAL load-only plan of each setting's plan set, at T_NC08 = 91.9 MW):** alpha {0, .25, .5, .75, 1} x w_svi {.5, .7, .9} (15); band 1% and 5% (2% is in the grid); Small C&I cost rate; flat allocation weights (1 per housing unit + 1 per job instead of the modeled kW, renormalized to the same D_NC08; it has its own plan set); county-share cap 50% (below; it has its own plan set). In every setting the load-only side is the plan set evaluated under that setting's harm weights and cost class, and each row also counts how many of the 200 plans the vulnerability-aware plan beats.
 - **Zone classes by the weighted plan's cuts:** always cut in every setting: 0. Sometimes: 36. Never cut although selectable: 121. Protected (never selectable): 26. The most frequently cut zones are 144 and 178 (16 of 20 settings each).
-- **Human harm:** the weighted plan has lower vulnerability-weighted households cut in 17 of 20 settings (-54% to -90%). It is HIGHER (+47% to +66%) in the 3 alpha = 0 settings, where human harm is ignored by construction. **Interruption cost:** it is lower in 16 of 20 settings; it is higher where alpha is 1 and the weights make cost nearly irrelevant (alpha 0.75, w_svi 0.5: +1%, alpha 1, w_svi 0.5: +6%, alpha 1, w_svi 0.7: +5%, alpha 1, w_svi 0.9: +5%).
-- **Households:** the weighted plan cuts MORE households in 19 of 20 settings (+141 to +6,799; +2,363, +15%, in the default setting); in the other 1 setting(s) (grid, alpha 0.25, w_svi 0.9: -63) it cuts about the same or fewer. Every UI place that shows vulnerability or cost results must say so plainly next to those numbers (`scenarios.plain_summary` builds the sentence from the numbers and says "MORE" or "fewer" as the data says).
-- **Band 1% / 2% / 5%:** identical plans. **Small C&I cost rate:** same plan, interruption cost change -50% instead of -39%. **Flat allocation:** baseline 5 zones vs weighted 12 zones, human harm -61%, cost -26%, +6,799 households; so the allocation assumption matters for sizes, but the direction does not change.
-- **Priority list ("where to plan first"), the definition used by the planning-implications card.** Since no zone is always cut, the list is the zones the default load-only baseline cuts that the vulnerability-aware plan spares in EVERY setting with alpha > 0, ordered by SVI. 6 zones (`cut at alpha 0` marks the ones that the economic-only settings do cut). **It changed on 2026-10-19** when the load weights changed by about 0.2% (see "Baseline plan instability" below): the list depends on which zones the load-only baseline happens to cut.
+- **Human harm:** the weighted plan has fewer vulnerability-weighted households than the typical plan in 17 of 20 settings (-52% to -91%), and fewer than 200 to 200 of the 200 plans in the 17 settings with alpha > 0. It is HIGHER (+50% to +54%) in the 3 alpha = 0 settings, where human harm is ignored by construction. **Electric-heat households:** fewer than 188 to 200 of 200 plans in those settings. **Interruption cost:** lower than the typical plan in 16 of 20 settings; higher where alpha is high (alpha 0.75, w_svi 0.5: +5%, alpha 1, w_svi 0.5: +10%, alpha 1, w_svi 0.7: +9%, alpha 1, w_svi 0.9: +9%); cost-beating counts range from 72 to 200 of 200.
+- **Households:** the weighted plan cuts MORE total households than the typical plan in 20 of 20 settings (+109 to +2,543; +2,543, +16%, in the default setting). Every UI place that shows vulnerability or cost results states this next to those numbers (`scenarios.plain_summary` says "MORE" or "fewer" as the data says).
+- **Band 1% / 2% / 5%:** identical plans. **Small C&I cost rate:** same plan, interruption cost change -48% instead of -37%. **Flat allocation:** human harm -79%, cost -7%, +2,421 households vs its typical plan; the allocation assumption matters for sizes, not for direction.
+- **Priority list ("where to plan first"), the definition used by the planning-implications card.** The zones the TYPICAL load-only plan cuts that the vulnerability-aware plan spares in EVERY setting with alpha > 0, ordered by SVI (8 zones; `cut at alpha 0` marks the ones the economic-only settings do cut). **Weakness:** each of these zones is cut by only 4% to 9% of the 200 equivalent load-only plans, because those plans differ a lot; so the list depends on which load-only plan is called typical and is best read as an illustration, not a ranking (a list based on how often load-only plans cut a zone would be more defensible).
 
-  | Zone | County | SVI | Electric-heat share | Households | Note |
-  |---|---|---|---|---|---|
-  | 103 | Robeson | 0.94 | 84% | 1,884 |  |
-  | 10 | Cabarrus | 0.64 | 62% | 3,178 | cut when alpha = 0 |
-  | 32 | Cabarrus | 0.32 | 52% | 3,556 |  |
-  | 28 | Cabarrus | 0.30 | 60% | 2,400 |  |
-  | 41 | Mecklenburg | 0.28 | 57% | 2,101 |  |
-  | 12 | Cabarrus | 0.11 | 81% | 2,474 |  |
+  | Zone | County | SVI | Electric-heat share | Households | Cut by load-only plans | Note |
+  |---|---|---|---|---|---|---|
+  | 66 | Montgomery | 0.94 | 76% | 1,892 | 9% |  |
+  | 115 | Scotland | 0.83 | 88% | 1,096 | 6% | cut when alpha = 0 |
+  | 7 | Anson | 0.83 | 56% | 1,747 | 8% |  |
+  | 121 | Stanly | 0.73 | 84% | 1,602 | 8% |  |
+  | 132 | Stanly | 0.69 | 74% | 1,206 | 6% |  |
+  | 65 | Montgomery | 0.59 | 74% | 549 | 8% |  |
+  | 133 | Stanly | 0.39 | 59% | 1,209 | 7% |  |
+  | 44 | Mecklenburg | 0.04 | 39% | 2,250 | 4% |  |
 
   The card is built only from these computed values and fixed-text follow-ups (outreach, backup-power planning, resilience-hub siting, request utility network data); it is never a switching recommendation. The list is a statement about this model and its settings, not a verified finding about specific neighborhoods.
-- **Where the cuts land (default).** Baseline: Cabarrus 4 zones (64.7 MW, 70%, 11,608 households, mean SVI 0.34), Mecklenburg 1 zone (14.3 MW, 16%, 2,101 households, mean SVI 0.28), Robeson 1 zone (13.0 MW, 14%, 1,884 households, mean SVI 0.94). Weighted: Union 9 zones (81.5 MW, 88%, 15,910 households, mean SVI 0.04), Mecklenburg 1 zone (10.7 MW, 12%, 2,046 households, mean SVI 0.01). The weighted plan concentrates its cuts in one county with very low vulnerability, which is a fairness concern of its own (cumulative burden on one place), and it is a version 2.0 item.
+- **Where the cuts land (default).** Typical load-only plan: Stanly 3 zones (25.5 MW, 28%, 4,017 households, mean SVI 0.61), Montgomery 2 zones (16.3 MW, 18%, 2,441 households, mean SVI 0.76), Anson 2 zones (12.9 MW, 14%, 1,996 households, mean SVI 0.52), Mecklenburg 1 zone (12.8 MW, 14%, 2,250 households, mean SVI 0.04), Union 1 zone (11.5 MW, 12%, 2,074 households, mean SVI 0.04), Cabarrus 1 zone (7.5 MW, 8%, 1,539 households, mean SVI 0.05), Scotland 1 zone (5.9 MW, 6%, 1,096 households, mean SVI 0.83). Vulnerability-aware: Union 9 zones (81.5 MW, 88%, 15,910 households, mean SVI 0.04), Mecklenburg 1 zone (10.7 MW, 12%, 2,046 households, mean SVI 0.01). The weighted plan concentrates its cuts in one county with very low vulnerability, which is a fairness concern of its own (cumulative burden on one place), and it is a version 2.0 item.
 
-**Scenarios (alpha 0.5):**
+**Scenarios (alpha 0.5, vs the typical plan of each target's set):**
 
-| Target | MW | Zones cut (baseline / weighted) | Households (baseline / weighted) | Human harm | Interruption cost (2013$) |
-|---|---|---|---|---|---|
-| 10% of D_NC08 | 168.7 | 11 / 18 | 28,133 / 30,405 | -64% | -44% |
-| 15% of D_NC08 | 253.0 | 17 / 28 | 40,007 / 46,076 | -61% | -38% |
-| 20% of D_NC08 | 337.3 | 23 / 38 | 53,102 / 61,359 | -59% | -38% |
+| Target | MW | Zones cut (typical / vulnerability-aware) | Households (typical / vulnerability-aware) | Human harm | Interruption cost (2013$) | Plans it cuts more total households than |
+|---|---|---|---|---|---|---|
+| 10% of D_NC08 | 168.7 | 18 / 18 | 28,407 / 30,405 | -70% | -39% | 193 of 200 |
+| 15% of D_NC08 | 253.0 | 29 / 28 | 42,569 / 46,076 | -66% | -31% | 199 of 200 |
+| 20% of D_NC08 | 337.3 | 36 / 38 | 56,861 / 61,359 | -63% | -25% | 200 of 200 |
 
-Zones cut in all three scenarios: baseline 11, weighted 18. Zones cut only in the 20% scenario: baseline 7, weighted 10. The weighted plan cuts more households in every scenario.
+Zones cut in all three scenarios: typical plans 3, weighted 18. Zones cut only in the 20% scenario: typical 22, weighted 10.
 
-**Alpha sweep (`docs/figures/alpha_tradeoff.png`, T_NC08, default weights):**
+**Alpha sweep (`docs/figures/alpha_tradeoff.png`, T_NC08, default weights, vs the typical plan):**
 
 | alpha | Human harm change | Interruption cost change | Households cut change |
 |---|---|---|---|
-| 0 | +55% | -66% | +2,106 (+14%) |
-| 0.25 | -60% | -52% | +1,159 (+7%) |
-| 0.5 | -73% | -39% | +2,363 (+15%) |
-| 0.75 | -81% | -10% | +1,622 (+10%) |
-| 1 | -82% | +5% | +1,052 (+7%) |
+| 0 | +52% | -65% | +2,286 (+15%) |
+| 0.25 | -61% | -51% | +1,339 (+9%) |
+| 0.5 | -73% | -37% | +2,543 (+16%) |
+| 0.75 | -81% | -7% | +1,802 (+12%) |
+| 1 | -83% | +9% | +1,232 (+8%) |
 
 **Dollar labeling.** Every dollar figure in the UI is labeled "2013 dollars" (ICE report dollars, not inflated).
 
-## Baseline plan instability (found 2026-10-19)
+## Baseline plan instability and the load-only plan set (found and addressed 2026-10-19)
 
-Changing the load weights by about 0.2% (the NREL hour correction: D_NC08 1,686.3 -> 1,686.7 MW, T_NC08 91.91 -> 91.93 MW) left the vulnerability-aware plan **unchanged** (the same 10 zones) but changed **3 of the 6 zones of the load-only baseline** (old [8, 10, 12, 23, 32, 142], new [10, 12, 28, 32, 41, 103]). Why: with 157 selectable zones there are on the order of 10^16 zone sets per MW that land inside the 2% band, so "the set that cuts the least MW above the target (within 10 kW), then fewest zones, then lowest ids" is decided by tiny numerical differences. The baseline is therefore one arbitrary member of a huge family of equally valid load-only plans.
+**The problem.** Changing the load weights by about 0.2% (the NREL hour correction) left the vulnerability-aware plan unchanged but changed 3 of the 6 zones of the single "load-only baseline", and with them the headline (3,353 -> 4,545 fewer electric-heat households), the priority list, the cost count in the robustness card, and the example-location zones. With 157 selectable zones there are on the order of 10^16 zone sets per MW inside the band, so "the set that cuts the least MW, then fewest zones, then lowest ids" is decided by tiny numerical differences: one arbitrary member of a huge family of equally valid load-only plans.
 
-What moved: baseline households 15,443 -> 15,593, electric-heat households 8,837 -> 10,029, vulnerability-weighted households 7,860 -> 7,578, interruption cost $478,888 -> $432,943; the headline "N fewer electric-heat households" 3,353 -> 4,545; the priority list (above); the cost count in the robustness card (20 of 20 -> 16 of 20); one setting where the weighted plan now cuts 63 FEWER households; and which example-location zones the baseline cuts.
+**What the app does now.** It compares the vulnerability-aware plan with a SET of equivalent load-only plans:
+- **Definition.** A load-only plan is any set of unprotected zones whose load lies in [T, T x 1.01] (it meets the target and overshoots by at most 1% of the target: optimal or near-optimal for the load-only objective). With the county cap on the cap applies to these plans too.
+- **Generation (deterministic, `model/loadonly.py`).** Plan 0 is the exact optimum of the old load-only objective. The other 199 come from one CBC solve each of min sum c_i x_i inside the same band, with c_i = L_i x u_i and u_i drawn from a generator with fixed seed 20261019 (uniform on [0.5, 1.5]); duplicates are discarded. 200 distinct plans per setting (199 solves), 157 of the 157 selectable zones used, mean overlap between plans (Jaccard) 0.034. Plan sets are frozen by `make freeze` (`data/frozen/loadonly_plans.json`, nine sets: the four targets x cap off/on, plus the flat-allocation sensitivity).
+- **Why it is representative, and what it is not.** Each random cost vector is a different "preference" among equivalent zones, so the set spreads over the whole near-optimal family (all selectable zones appear, plans overlap very little). It is NOT a uniform sample of that family (uniform sampling of subset-sum slices is not practical); a test checks that a fresh set with another seed has medians within 5%.
+- **Typical plan.** The member closest to the median on all four displayed measures (households, electric-heat households, vulnerability-weighted households, interruption cost): distance = sum of |percentile rank - 0.5|, ties to the lowest index. (Choosing the plan closest to the median on human harm alone gave a plan at about the 85th percentile for electric-heat households and would have overstated the headline gap by about 1,400 households.) It is shown on the left map and is the plan the headline, the flip strip and the percent changes refer to.
+- **Headline and range line.** "Same 92 MW cut. 3,412 fewer electric-heat households than the typical load-only plan." Under it: "Across 200 equivalent load-only plans, they cut 6,874-11,454 electric-heat households; the vulnerability-aware plan cut 5,484. It cuts MORE total households than 200 of 200."
+- **Strip charts.** Four dot plots (electric-heat households, vulnerability-weighted households, cost, total households) show all 200 plans, the typical plan (diamond) and the vulnerability-aware plan (circle).
+- **Every number that used to refer to "the baseline" now refers to the typical plan**, and the cut frequency of each zone (how many of the 200 plans cut it) is shown in tooltips, the flip strip, the zone detail and the example-locations table.
 
-**How much does it matter?** A check with 120 other plans that meet the same MW band (random cost per zone; reproduce with `PYTHONPATH=src python scripts/baseline_spread.py`): households cut 13,721 to 17,132 (median 15,636), electric-heat households 6,506 to 11,476 (median 8,972), vulnerability-weighted households 4,850 to 10,149 (median 7,496), interruption cost $227,093 to $666,762. Against the vulnerability-aware plan (17,956 households, 5,484 electric-heat, 2,053 vulnerability-weighted, $264,733): it has fewer vulnerability-weighted households than 100% of those plans, fewer electric-heat households than 100%, lower cost than 99%, and MORE total households cut than 100% of them. **So the directions of the findings are robust, but the sizes depend on which tied plan is called the baseline** (for example the electric-heat difference is 4,545 against the shipped baseline but about 3,488 against the median of the sampled plans). A more defensible comparison would report the vulnerability-aware plan against the median and range of many load-only plans instead of one; that is not implemented (version 2.0 or a follow-up).
+**Result.** Against the 200 plans (default setting): electric-heat households 6,874 to 11,454 (median 9,067) vs 5,484; vulnerability-weighted households 4,784 to 11,116 (median 7,680) vs 2,053; cost $260,199 to $731,161 (median $420,919) vs $264,733; total households 13,387 to 17,458 (median 15,516) vs 17,956. The directions are robust (the vulnerability-aware plan is outside the load-only range on three of the four measures and cuts MORE total households than every plan), while the size of any gap depends on which plan you compare with, which is why the page shows the range. `scripts/baseline_spread.py` is an earlier, simpler version of this check.
+
+**Remaining weaknesses.** The set depends on the near-optimality tolerance (1%) and the cost spread (0.5); the priority list built on the typical plan is weak (each zone is cut by few plans); example locations illustrate this particular typical plan; and the vulnerability-aware plan itself is one optimum of its objective (it was identical before and after the 0.2% weight change, but it too is only one plan).
 
 ## County-share cap (optional, default OFF; added 2026-10-18)
 
-In the default scenario the baseline puts 70% of its cut in Cabarrus County and the weighted plan puts 88% in Union County. As a response to cumulative-burden concentration the optimizer has an optional constraint (`optimizer.county_cap`, enabled: false, max_share: 0.5): no single county may take more than 50% of the total MW cut. It is linear (county MW <= share x total MW cut), applied to BOTH plans equally, and changes the baseline too. Infeasible if the unprotected load is in too few counties (the result says so). Solve time about 1.3 s (the default without the cap is about 0.5 s). It limits concentration by county only; it does not make the weighted plan spread cuts to vulnerable counties.
+In the default scenario the typical load-only plan puts 28% of its cut in Stanly County and the weighted plan puts 88% in Union County. As a response to cumulative-burden concentration the optimizer has an optional constraint (`optimizer.county_cap`, enabled: false, max_share: 0.5): no single county may take more than 50% of the total MW cut. It is linear (county MW <= share x total MW cut), applied to BOTH plans equally, and changes the baseline too. Infeasible if the unprotected load is in too few counties (the result says so). Solve time about 1.3 s (the default without the cap is about 0.5 s). It limits concentration by county only; it does not make the weighted plan spread cuts to vulnerable counties.
 
-**Default scenario with the cap ON (alpha 0.5, band 91.93 to 93.77 MW, T_NC08 = 91.9 MW):**
+**Default scenario with the cap ON (alpha 0.5, band 91.93 to 93.77 MW, T_NC08 = 91.9 MW; the cap applies to the load-only plans too, so the set is different):**
 
-| | Baseline | Weighted | Weighted vs baseline |
+| | Typical load-only plan | Vulnerability-aware | Vulnerability-aware vs typical |
 |---|---|---|---|
-| MW cut | 91.94 | 91.95 | |
-| Zones cut | 6 | 10 | |
-| Households cut | 14,801 | 15,522 | +721 (+4.9%) MORE households |
-| Electric-heat households | 7,796 | 5,468 | -2,328 |
-| Vulnerability-weighted households | 6,806 | 2,316 | -66.0% |
-| Interruption cost (2013 dollars) | $574,056 | $263,819 | -54.0% |
+| MW cut | 92.25 | 91.95 | |
+| Zones cut | 11 | 10 | |
+| Households cut | 15,413 | 15,522 | +109 (+0.7%) MORE households |
+| Electric-heat households | 8,896 | 5,468 | -3,428 |
+| Vulnerability-weighted households | 7,741 | 2,316 | -70.1% |
+| Interruption cost (2013 dollars) | $417,615 | $263,819 | -36.8% |
 
-Counties (share of MW cut): baseline Cabarrus 2 zones (36.3 MW, 39%, 6,734 households, mean SVI 0.48), Mecklenburg 2 zones (23.6 MW, 26%, 3,746 households, mean SVI 0.18), Union 1 zone (19.5 MW, 21%, 2,429 households, mean SVI 0.29), Montgomery 1 zone (12.5 MW, 14%, 1,892 households, mean SVI 0.94). Weighted: Union 5 zones (45.6 MW, 50%, 8,946 households, mean SVI 0.04), Montgomery 2 zones (26.2 MW, 29%, 2,727 households, mean SVI 0.18), Mecklenburg 2 zones (18.8 MW, 20%, 3,600 households, mean SVI 0.02), Anson 1 zone (1.3 MW, 1%, 249 households, mean SVI 0.21).
+Counties (share of MW cut): typical plan Stanly 3 zones (25.5 MW, 28%, 4,017 households, mean SVI 0.61), Montgomery 2 zones (16.3 MW, 18%, 2,441 households, mean SVI 0.76), Anson 2 zones (12.9 MW, 14%, 1,996 households, mean SVI 0.52), Mecklenburg 1 zone (12.8 MW, 14%, 2,250 households, mean SVI 0.04), Union 1 zone (11.5 MW, 12%, 2,074 households, mean SVI 0.04), Cabarrus 1 zone (7.5 MW, 8%, 1,539 households, mean SVI 0.05), Scotland 1 zone (5.9 MW, 6%, 1,096 households, mean SVI 0.83). Weighted: Union 5 zones (45.6 MW, 50%, 8,946 households, mean SVI 0.04), Montgomery 2 zones (26.2 MW, 29%, 2,727 households, mean SVI 0.18), Mecklenburg 2 zones (18.8 MW, 20%, 3,600 households, mean SVI 0.02), Anson 1 zone (1.3 MW, 1%, 249 households, mean SVI 0.21). Against the 200 capped load-only plans, the vulnerability-aware plan has fewer vulnerability-weighted households than 200, fewer electric-heat households than 200, and more total households than 102.
 
-Compared with the cap OFF numbers (baseline: Cabarrus 4 zones (64.7 MW; weighted: 88% of cuts in Union; vulnerability-weighted households 2,053; cost $264,733; +2,363 households), the cap changes the baseline too (vulnerability-weighted households 7,578 -> 6,806, cost $432,943 -> $574,056), so the gap in human harm moves from -73% to -66%, while the weighted plan itself changes from 2,053 to 2,316 vulnerability-weighted households. The weighted plan still cuts more households. The cap is a sensitivity row (`county-share cap 50%`) in the sensitivity table; the pre-solved demo grid also holds the capped results.
+The cap is a sensitivity row (`county-share cap 50%`) in the sensitivity table; the pre-solved demo grid also holds the capped results.
 
 ## App (Phase 4 step 5; `make app`)
 
 - **Everything on the page is computed**: headline, honest line, flip-strip sentences, metrics and the robustness counts are built from model results and `data/frozen/` (tests compare the page text with the model output). The headline flips wording with the numbers: at alpha = 0 it reads "N MORE electric-heat households in the dark" and the honest line says "50% more vulnerability-weighted households".
 - **Honesty line.** The sentence from `scenarios.plain_summary`, which says "cuts N MORE households" when that is what the numbers say, sits directly under the headline in every state. Dollar figures are labeled "2013 dollars".
-- **Counts differ from the brief.** The robustness card computes its counts live from the sensitivity table: now 17 of 20 settings beat the baseline on human harm (the 3 that do not set alpha to 0), 16 of 20 on cost, 19 of 20 cut more households. (The brief said 16 of 19; the county-cap row made it 20 settings, and the hour-ending recomputation changed the baseline plan.)
+- **Counts differ from the brief.** The robustness card computes its counts live from the sensitivity table: 17 of 20 settings beat the typical load-only plan on human harm (the 3 that do not set alpha to 0), 16 of 20 on cost, 20 of 20 cut more total households; against all 200 plans the numbers are on the card. (The brief said 16 of 19.)
 - **Pre-solved grid is now 40 records** (cap OFF and ON x 5 alphas x Elliott/10/15/20%), because the first capped live solve took 2.2 s and tripped the 2 s limit. The reduction slider has only the four pre-solved stops (Elliott default, 10%, 15%, 20%), so normal use never solves live. The live-solve path remains as a safety net (if config adds a stop, or a lookup misses): when it errors, is infeasible, or takes over 2 s the app shows the nearest pre-solved result with a visible note.
 - **Offline maps.** Streamlit's frontend falls back to Carto basemap tiles from the internet when no map style is given; a Playwright network log caught this. The maps use a blank inline style (a data: URL), and the browser check shows zero external requests. Maps have no basemap, so the zones and NC-08 outline are the only features.
 - **Rendering bug.** `line_width_units="pixels"` drew huge solid lines in this deck.gl version; the maps use `line_width_min_pixels`. Protected zones are drawn with real diagonal hatch lines (deck.gl has no fill patterns).
