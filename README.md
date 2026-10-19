@@ -60,7 +60,7 @@ make demo        # opens the app on the frozen scenario (http://localhost:8765)
 
 `requirements.txt` is exactly what the deployed app imports (pinned); `requirements-dev.txt` adds the test, figure and data-refresh tools. **In a clean clone `make test` skips 7 tests and passes the rest:** the seven data-pull checks (tract count, GEOID cleanliness, no silent NaN fills, facility types, the area-join identity check, the saved EIA series, the county table) need the raw downloads in `data/raw/`, which are gitignored; they run after `make data`. The skips say "run `make data` first".
 
-The app reads only `data/frozen/` (committed, about 1 MB). There are no live API calls at runtime and it renders with every network call blocked (a test does exactly that). `make data` (needs `EIA_API_KEY` and `CENSUS_API_KEY` in `.env`) and `make freeze` rebuild the frozen inputs from the public sources; they are only needed to refresh data. Deep links for the controls: `?alpha=1&pct=10&cap=1&zone=23`.
+The app reads only `data/frozen/` (committed, about 1 MB). There are no live API calls at runtime and it renders with every network call blocked (a test does exactly that). `make data` (needs `EIA_API_KEY` and `CENSUS_API_KEY` in `.env`) and `make freeze` rebuild the frozen inputs from the public sources (`make freeze` takes about 6 minutes because it generates the load-only plan sets); they are only needed to refresh data. Deep links for the controls: `?alpha=1&pct=10&cap=1&zone=23`.
 
 ## Data sources and dates
 
