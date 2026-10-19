@@ -101,6 +101,13 @@ harm:
     # "small" is the sensitivity case (13.5x higher per kW). Cost per job = $/kW x ComStock kW per job (frozen constants).
     commercial_class: "medium_large"
 
+# "Vulnerable zones most often cut when only megawatts count": among unprotected zones with SVI >= svi_min OR electric-heat share >=
+# electric_heat_min, rank by how many of the load-only plans cut them; show the top max_rows. Thresholds are judgment calls.
+priority_list:
+  svi_min: 0.75
+  electric_heat_min: 0.5
+  max_rows: 10
+
 optimizer:
   solver: "CBC"
   max_solve_seconds: 2.0

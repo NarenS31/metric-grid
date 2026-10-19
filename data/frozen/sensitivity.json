@@ -1423,146 +1423,91 @@
   133,
   172
  ],
- "spared_every_setting": [
-  {
-   "zone_id": 66,
-   "GEOID": "37123960102",
-   "COUNTY": "Montgomery County",
-   "RPL_THEMES": 0.939,
-   "share_electric_heat": 0.7558139534883721,
-   "occupied_units": 1892.0,
-   "L_mw": 12.523812589828854
-  },
-  {
-   "zone_id": 7,
-   "GEOID": "37007920502",
-   "COUNTY": "Anson County",
-   "RPL_THEMES": 0.8292,
-   "share_electric_heat": 0.5563823697767601,
-   "occupied_units": 1747.0,
-   "L_mw": 11.61890323994387
-  },
-  {
-   "zone_id": 121,
-   "GEOID": "37167930200",
-   "COUNTY": "Stanly County",
-   "RPL_THEMES": 0.7303,
-   "share_electric_heat": 0.8395755305867666,
-   "occupied_units": 1602.0,
-   "L_mw": 9.449340367059738
-  },
-  {
-   "zone_id": 132,
-   "GEOID": "37167931102",
-   "COUNTY": "Stanly County",
-   "RPL_THEMES": 0.6947,
-   "share_electric_heat": 0.7371475953565506,
-   "occupied_units": 1206.0,
-   "L_mw": 8.265043946864871
-  },
-  {
-   "zone_id": 65,
-   "GEOID": "37123960101",
-   "COUNTY": "Montgomery County",
-   "RPL_THEMES": 0.5909,
-   "share_electric_heat": 0.7377049180327869,
-   "occupied_units": 549.0,
-   "L_mw": 3.734148602795324
-  },
-  {
-   "zone_id": 133,
-   "GEOID": "37167931202",
-   "COUNTY": "Stanly County",
-   "RPL_THEMES": 0.3928,
-   "share_electric_heat": 0.5930521091811415,
-   "occupied_units": 1209.0,
-   "L_mw": 7.742162082533971
-  },
-  {
-   "zone_id": 44,
-   "GEOID": "37119005714",
-   "COUNTY": "Mecklenburg County",
-   "RPL_THEMES": 0.0371,
-   "share_electric_heat": 0.3888888888888889,
-   "occupied_units": 2250.0,
-   "L_mw": 12.768364263862281
-  }
- ],
- "spared_excluding_alpha0": [
-  {
-   "zone_id": 66,
-   "GEOID": "37123960102",
-   "COUNTY": "Montgomery County",
-   "RPL_THEMES": 0.939,
-   "share_electric_heat": 0.7558139534883721,
-   "occupied_units": 1892.0,
-   "L_mw": 12.523812589828854
-  },
-  {
-   "zone_id": 115,
-   "GEOID": "37165010501",
-   "COUNTY": "Scotland County",
-   "RPL_THEMES": 0.8322,
-   "share_electric_heat": 0.8777372262773723,
-   "occupied_units": 1096.0,
-   "L_mw": 5.889719665830788
-  },
-  {
-   "zone_id": 7,
-   "GEOID": "37007920502",
-   "COUNTY": "Anson County",
-   "RPL_THEMES": 0.8292,
-   "share_electric_heat": 0.5563823697767601,
-   "occupied_units": 1747.0,
-   "L_mw": 11.61890323994387
-  },
-  {
-   "zone_id": 121,
-   "GEOID": "37167930200",
-   "COUNTY": "Stanly County",
-   "RPL_THEMES": 0.7303,
-   "share_electric_heat": 0.8395755305867666,
-   "occupied_units": 1602.0,
-   "L_mw": 9.449340367059738
-  },
-  {
-   "zone_id": 132,
-   "GEOID": "37167931102",
-   "COUNTY": "Stanly County",
-   "RPL_THEMES": 0.6947,
-   "share_electric_heat": 0.7371475953565506,
-   "occupied_units": 1206.0,
-   "L_mw": 8.265043946864871
-  },
-  {
-   "zone_id": 65,
-   "GEOID": "37123960101",
-   "COUNTY": "Montgomery County",
-   "RPL_THEMES": 0.5909,
-   "share_electric_heat": 0.7377049180327869,
-   "occupied_units": 549.0,
-   "L_mw": 3.734148602795324
-  },
-  {
-   "zone_id": 133,
-   "GEOID": "37167931202",
-   "COUNTY": "Stanly County",
-   "RPL_THEMES": 0.3928,
-   "share_electric_heat": 0.5930521091811415,
-   "occupied_units": 1209.0,
-   "L_mw": 7.742162082533971
-  },
-  {
-   "zone_id": 44,
-   "GEOID": "37119005714",
-   "COUNTY": "Mecklenburg County",
-   "RPL_THEMES": 0.0371,
-   "share_electric_heat": 0.3888888888888889,
-   "occupied_units": 2250.0,
-   "L_mw": 12.768364263862281
-  }
- ],
  "priority_list": [
+  {
+   "zone_id": 69,
+   "GEOID": "37123960301",
+   "COUNTY": "Montgomery County",
+   "RPL_THEMES": 0.3708,
+   "share_electric_heat": 0.9243156199677939,
+   "occupied_units": 621.0,
+   "L_mw": 4.167634707301613,
+   "loadonly_cut_count": 24,
+   "loadonly_cut_share": 0.12,
+   "vuln_aware_cuts": false,
+   "vuln_aware_cut_settings": 5,
+   "n_settings": 20
+  },
+  {
+   "zone_id": 87,
+   "GEOID": "37155960302",
+   "COUNTY": "Robeson County",
+   "RPL_THEMES": 0.9091,
+   "share_electric_heat": 0.6971496437054632,
+   "occupied_units": 842.0,
+   "L_mw": 4.8020762850697905,
+   "loadonly_cut_count": 22,
+   "loadonly_cut_share": 0.11,
+   "vuln_aware_cuts": false,
+   "vuln_aware_cut_settings": 0,
+   "n_settings": 20
+  },
+  {
+   "zone_id": 86,
+   "GEOID": "37155960301",
+   "COUNTY": "Robeson County",
+   "RPL_THEMES": 0.9909,
+   "share_electric_heat": 0.7242798353909465,
+   "occupied_units": 1215.0,
+   "L_mw": 8.007093243173943,
+   "loadonly_cut_count": 19,
+   "loadonly_cut_share": 0.095,
+   "vuln_aware_cuts": false,
+   "vuln_aware_cut_settings": 0,
+   "n_settings": 20
+  },
+  {
+   "zone_id": 85,
+   "GEOID": "37153971100",
+   "COUNTY": "Richmond County",
+   "RPL_THEMES": 0.8201,
+   "share_electric_heat": 0.7759776536312849,
+   "occupied_units": 1790.0,
+   "L_mw": 10.664106714326294,
+   "loadonly_cut_count": 19,
+   "loadonly_cut_share": 0.095,
+   "vuln_aware_cuts": false,
+   "vuln_aware_cut_settings": 0,
+   "n_settings": 20
+  },
+  {
+   "zone_id": 17,
+   "GEOID": "37025041507",
+   "COUNTY": "Cabarrus County",
+   "RPL_THEMES": 0.0542,
+   "share_electric_heat": 0.6140350877192983,
+   "occupied_units": 1539.0,
+   "L_mw": 7.526228927339838,
+   "loadonly_cut_count": 19,
+   "loadonly_cut_share": 0.095,
+   "vuln_aware_cuts": false,
+   "vuln_aware_cut_settings": 6,
+   "n_settings": 20
+  },
+  {
+   "zone_id": 111,
+   "GEOID": "37165010102",
+   "COUNTY": "Scotland County",
+   "RPL_THEMES": 0.9727,
+   "share_electric_heat": 0.7266251113089938,
+   "occupied_units": 2246.0,
+   "L_mw": 14.665582262529236,
+   "loadonly_cut_count": 18,
+   "loadonly_cut_share": 0.09,
+   "vuln_aware_cuts": false,
+   "vuln_aware_cut_settings": 0,
+   "n_settings": 20
+  },
   {
    "zone_id": 66,
    "GEOID": "37123960102",
@@ -1571,85 +1516,53 @@
    "share_electric_heat": 0.7558139534883721,
    "occupied_units": 1892.0,
    "L_mw": 12.523812589828854,
-   "cut_at_alpha0": false,
-   "loadonly_cut_share": 0.09
+   "loadonly_cut_count": 18,
+   "loadonly_cut_share": 0.09,
+   "vuln_aware_cuts": false,
+   "vuln_aware_cut_settings": 0,
+   "n_settings": 20
   },
   {
-   "zone_id": 115,
-   "GEOID": "37165010501",
-   "COUNTY": "Scotland County",
-   "RPL_THEMES": 0.8322,
-   "share_electric_heat": 0.8777372262773723,
-   "occupied_units": 1096.0,
-   "L_mw": 5.889719665830788,
-   "cut_at_alpha0": true,
-   "loadonly_cut_share": 0.065
-  },
-  {
-   "zone_id": 7,
-   "GEOID": "37007920502",
-   "COUNTY": "Anson County",
-   "RPL_THEMES": 0.8292,
-   "share_electric_heat": 0.5563823697767601,
-   "occupied_units": 1747.0,
-   "L_mw": 11.61890323994387,
-   "cut_at_alpha0": false,
-   "loadonly_cut_share": 0.085
-  },
-  {
-   "zone_id": 121,
-   "GEOID": "37167930200",
+   "zone_id": 122,
+   "GEOID": "37167930300",
    "COUNTY": "Stanly County",
-   "RPL_THEMES": 0.7303,
-   "share_electric_heat": 0.8395755305867666,
-   "occupied_units": 1602.0,
-   "L_mw": 9.449340367059738,
-   "cut_at_alpha0": false,
-   "loadonly_cut_share": 0.085
+   "RPL_THEMES": 0.5011,
+   "share_electric_heat": 0.6957390146471372,
+   "occupied_units": 1502.0,
+   "L_mw": 9.520753454910476,
+   "loadonly_cut_count": 18,
+   "loadonly_cut_share": 0.09,
+   "vuln_aware_cuts": false,
+   "vuln_aware_cut_settings": 0,
+   "n_settings": 20
   },
   {
-   "zone_id": 132,
-   "GEOID": "37167931102",
-   "COUNTY": "Stanly County",
-   "RPL_THEMES": 0.6947,
-   "share_electric_heat": 0.7371475953565506,
-   "occupied_units": 1206.0,
-   "L_mw": 8.265043946864871,
-   "cut_at_alpha0": false,
-   "loadonly_cut_share": 0.06
-  },
-  {
-   "zone_id": 65,
-   "GEOID": "37123960101",
-   "COUNTY": "Montgomery County",
-   "RPL_THEMES": 0.5909,
-   "share_electric_heat": 0.7377049180327869,
-   "occupied_units": 549.0,
-   "L_mw": 3.734148602795324,
-   "cut_at_alpha0": false,
-   "loadonly_cut_share": 0.085
-  },
-  {
-   "zone_id": 133,
-   "GEOID": "37167931202",
-   "COUNTY": "Stanly County",
-   "RPL_THEMES": 0.3928,
-   "share_electric_heat": 0.5930521091811415,
-   "occupied_units": 1209.0,
-   "L_mw": 7.742162082533971,
-   "cut_at_alpha0": false,
-   "loadonly_cut_share": 0.07
-  },
-  {
-   "zone_id": 44,
-   "GEOID": "37119005714",
+   "zone_id": 64,
+   "GEOID": "37119005865",
    "COUNTY": "Mecklenburg County",
-   "RPL_THEMES": 0.0371,
-   "share_electric_heat": 0.3888888888888889,
-   "occupied_units": 2250.0,
-   "L_mw": 12.768364263862281,
-   "cut_at_alpha0": false,
-   "loadonly_cut_share": 0.045
+   "RPL_THEMES": 0.1939,
+   "share_electric_heat": 0.6296296296296297,
+   "occupied_units": 945.0,
+   "L_mw": 5.409598384965687,
+   "loadonly_cut_count": 18,
+   "loadonly_cut_share": 0.09,
+   "vuln_aware_cuts": false,
+   "vuln_aware_cut_settings": 0,
+   "n_settings": 20
+  },
+  {
+   "zone_id": 159,
+   "GEOID": "37179020406",
+   "COUNTY": "Union County",
+   "RPL_THEMES": 0.9951,
+   "share_electric_heat": 0.5850120870265915,
+   "occupied_units": 1241.0,
+   "L_mw": 10.158806191156703,
+   "loadonly_cut_count": 17,
+   "loadonly_cut_share": 0.085,
+   "vuln_aware_cuts": false,
+   "vuln_aware_cut_settings": 0,
+   "n_settings": 20
   }
  ]
 }

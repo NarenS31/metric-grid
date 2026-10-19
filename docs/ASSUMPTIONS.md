@@ -68,20 +68,20 @@ The vulnerability-aware plan has fewer electric-heat households than all 200 of 
 - **Human harm:** the weighted plan has fewer vulnerability-weighted households than the typical plan in 17 of 20 settings (-52% to -91%), and fewer than 200 to 200 of the 200 plans in the 17 settings with alpha > 0. It is HIGHER (+50% to +54%) in the 3 alpha = 0 settings, where human harm is ignored by construction. **Electric-heat households:** fewer than 188 to 200 of 200 plans in those settings. **Interruption cost:** lower than the typical plan in 16 of 20 settings; higher where alpha is high (alpha 0.75, w_svi 0.5: +5%, alpha 1, w_svi 0.5: +10%, alpha 1, w_svi 0.7: +9%, alpha 1, w_svi 0.9: +9%); cost-beating counts range from 72 to 200 of 200.
 - **Households:** the weighted plan cuts MORE total households than the typical plan in 20 of 20 settings (+109 to +2,543; +2,543, +16%, in the default setting). Every UI place that shows vulnerability or cost results states this next to those numbers (`scenarios.plain_summary` says "MORE" or "fewer" as the data says).
 - **Band 1% / 2% / 5%:** identical plans. **Small C&I cost rate:** same plan, interruption cost change -48% instead of -37%. **Flat allocation:** human harm -79%, cost -7%, +2,421 households vs its typical plan; the allocation assumption matters for sizes, not for direction.
-- **Priority list ("where to plan first"), the definition used by the planning-implications card.** The zones the TYPICAL load-only plan cuts that the vulnerability-aware plan spares in EVERY setting with alpha > 0, ordered by SVI (8 zones; `cut at alpha 0` marks the ones the economic-only settings do cut). **Weakness:** each of these zones is cut by only 4% to 9% of the 200 equivalent load-only plans, because those plans differ a lot; so the list depends on which load-only plan is called typical and is best read as an illustration, not a ranking (a list based on how often load-only plans cut a zone would be more defensible).
+- **Priority list ("Vulnerable zones most often cut when only megawatts count"), the definition used by the planning-implications card.** Among unprotected zones with SVI >= 0.75 OR electric-heat share >= 50% (config `priority_list`; judgment calls), rank by how many of the 200 default load-only plans cut the zone (ties: higher SVI, then lower zone id); show the top 10 and whether the vulnerability-aware plan cuts the zone (default setting; the app also gives the number of the 20 settings). A zone with no SVI never qualifies on SVI. **Weakness:** the 200 plans are a deterministic, near-optimal set, not a uniform sample of all load-only plans, so the frequencies are indicative, not exact; the card says so. No zone is cut by more than 12% of the plans, so this is a list to read, not a ranking to trust to the last place.
 
-  | Zone | County | SVI | Electric-heat share | Households | Cut by load-only plans | Note |
+  | Zone | County | SVI | Electric-heat share | Households | Cut by load-only plans | Vulnerability-aware plan cuts it |
   |---|---|---|---|---|---|---|
-  | 66 | Montgomery | 0.94 | 76% | 1,892 | 9% |  |
-  | 115 | Scotland | 0.83 | 88% | 1,096 | 6% | cut when alpha = 0 |
-  | 7 | Anson | 0.83 | 56% | 1,747 | 8% |  |
-  | 121 | Stanly | 0.73 | 84% | 1,602 | 8% |  |
-  | 132 | Stanly | 0.69 | 74% | 1,206 | 6% |  |
-  | 65 | Montgomery | 0.59 | 74% | 549 | 8% |  |
-  | 133 | Stanly | 0.39 | 59% | 1,209 | 7% |  |
-  | 44 | Mecklenburg | 0.04 | 39% | 2,250 | 4% |  |
-
-  The card is built only from these computed values and fixed-text follow-ups (outreach, backup-power planning, resilience-hub siting, request utility network data); it is never a switching recommendation. The list is a statement about this model and its settings, not a verified finding about specific neighborhoods.
+  | 69 | Montgomery | 0.37 | 92% | 621 | 24 of 200 | No |
+  | 87 | Robeson | 0.91 | 70% | 842 | 22 of 200 | No |
+  | 86 | Robeson | 0.99 | 72% | 1,215 | 19 of 200 | No |
+  | 85 | Richmond | 0.82 | 78% | 1,790 | 19 of 200 | No |
+  | 17 | Cabarrus | 0.05 | 61% | 1,539 | 19 of 200 | No |
+  | 111 | Scotland | 0.97 | 73% | 2,246 | 18 of 200 | No |
+  | 66 | Montgomery | 0.94 | 76% | 1,892 | 18 of 200 | No |
+  | 122 | Stanly | 0.50 | 70% | 1,502 | 18 of 200 | No |
+  | 64 | Mecklenburg | 0.19 | 63% | 945 | 18 of 200 | No |
+  | 159 | Union | 1.00 | 59% | 1,241 | 17 of 200 | No |
 - **Where the cuts land (default).** Typical load-only plan: Stanly 3 zones (25.5 MW, 28%, 4,017 households, mean SVI 0.61), Montgomery 2 zones (16.3 MW, 18%, 2,441 households, mean SVI 0.76), Anson 2 zones (12.9 MW, 14%, 1,996 households, mean SVI 0.52), Mecklenburg 1 zone (12.8 MW, 14%, 2,250 households, mean SVI 0.04), Union 1 zone (11.5 MW, 12%, 2,074 households, mean SVI 0.04), Cabarrus 1 zone (7.5 MW, 8%, 1,539 households, mean SVI 0.05), Scotland 1 zone (5.9 MW, 6%, 1,096 households, mean SVI 0.83). Vulnerability-aware: Union 9 zones (81.5 MW, 88%, 15,910 households, mean SVI 0.04), Mecklenburg 1 zone (10.7 MW, 12%, 2,046 households, mean SVI 0.01). The weighted plan concentrates its cuts in one county with very low vulnerability, which is a fairness concern of its own (cumulative burden on one place), and it is a version 2.0 item.
 
 **Scenarios (alpha 0.5, vs the typical plan of each target's set):**
@@ -121,7 +121,9 @@ Zones cut in all three scenarios: typical plans 3, weighted 18. Zones cut only i
 
 **Result.** Against the 200 plans (default setting): electric-heat households 6,874 to 11,454 (median 9,067) vs 5,484; vulnerability-weighted households 4,784 to 11,116 (median 7,680) vs 2,053; cost $260,199 to $731,161 (median $420,919) vs $264,733; total households 13,387 to 17,458 (median 15,516) vs 17,956. The directions are robust (the vulnerability-aware plan is outside the load-only range on three of the four measures and cuts MORE total households than every plan), while the size of any gap depends on which plan you compare with, which is why the page shows the range. `scripts/baseline_spread.py` is an earlier, simpler version of this check.
 
-**Remaining weaknesses.** The set depends on the near-optimality tolerance (1%) and the cost spread (0.5); the priority list built on the typical plan is weak (each zone is cut by few plans); example locations illustrate this particular typical plan; and the vulnerability-aware plan itself is one optimum of its objective (it was identical before and after the 0.2% weight change, but it too is only one plan).
+**The vulnerability-aware plan is one optimum.** It is a single optimum of its objective; no distribution of equivalent vulnerability-aware plans was generated, so only the load-only side is shown as a range.
+
+**Remaining weaknesses.** The set depends on the near-optimality tolerance (1%) and the cost spread (0.5); the priority list's frequencies are indicative because the plan set is not a uniform sample; and example locations illustrate this particular typical plan.
 
 ## County-share cap (optional, default OFF; added 2026-10-18)
 
@@ -157,7 +159,7 @@ The cap is a sensitivity row (`county-share cap 50%`) in the sensitivity table; 
 ## Phase 6: demo locations, states, audit (2026-10-19)
 
 - **Example locations (config `example_locations`; the app card is titled "Example locations").** Three public buildings, no home addresses, no live geocoder: Wolf Meadow Elementary School (Cabarrus, zone 23), Hemby Bridge Elementary School, Indian Trail (Union, zone 141) and the Robeson County Public Library, Lumberton (zone 100). **They were chosen to illustrate differences between the plans**, not at random: in the default scenario the baseline cuts zone 23 and the vulnerability-aware plan spares it, the vulnerability-aware plan cuts zone 141 and the baseline does not, and zone 100 is kept on under both. The school locations are the OpenStreetMap record's name, street address and centroid (pulled via Overpass on 2026-10-19; each point lies inside its zone, which a test checks); the library's coordinates are the US Census Geocoder result for its street address (benchmark Public_AR_Current, 2026-10-19), and that the address is the library is from public knowledge, so the author should verify it. A school near the author's own was deliberately not used. Each location is reported as the status of the census tract zone it sits in. (An earlier set of three buildings was replaced because all three read "kept on" under both plans.)
-- **Zone detail opens on the top priority zone** (zone 8, the first row of the priority list, read from sensitivity.json, not typed).
+- **Zone detail opens on the top priority zone** (the first row of the priority list, read from sensitivity.json, not typed).
 - **States.** Empty (no zone selected; `?zone=0`), loading (live solves show a spinner), infeasible (an orange note with the model's reason and the maximum feasible MW, plus the nearest pre-computed result), missing data (zone 9 has no SVI: a visible data note and a grey zone), missing frozen files (the page says to run `make data` and `make freeze`; no stack trace). Tests cover each.
 - **Tooltips** for SVI, ICE, census tract zone and target band are native hover text (definitions in `app/copy.py`; the band tooltip fills its percentages from config).
 - **Audit (`tests/test_audit.py`).** Banned-word check over every tracked text file (exempt: the brief, CLAUDE.md and the files that define the banned list; the required rule-4 sentence is removed before checking); AI_DISCLOSURE lists every tracked file; no model numbers typed into app strings (only label facts such as years and dataset names); README table and shot-list numbers match the model; the shot-list code excerpt matches optimizer.py line for line.

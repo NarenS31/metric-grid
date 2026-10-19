@@ -61,7 +61,7 @@ def test_required_district_sentence_and_labels_present(default_page):
     assert provenance.DISTRICT_SENTENCE in text
     for label in ("Modeled scenario", "North Carolina's 8th District", "A typical load-only plan (median of 200 equivalent plans)", "Vulnerability-aware plan",
                   "not Duke's method", "not an operational switching tool", "census tracts, not utility boundaries",
-                  "Both plans cut between", "2013 dollars", "Where to plan first", "How robust is this?", "Flip strip"):
+                  "Both plans cut between", "2013 dollars", "Vulnerable zones most often cut when only megawatts count", "How robust is this?", "Flip strip"):
         assert label in text, label
 
 
@@ -73,9 +73,15 @@ def test_no_banned_words_in_ui_text(default_page):
 
 def test_priority_card_matches_sensitivity_output(default_page):
     text = page_text(default_page)
+    assert "Vulnerable zones most often cut when only megawatts count" in text and "Where to plan first" not in text
     for rec in frozen.load_sensitivity()["priority_list"]:
         assert f"<tr><td>{rec['zone_id']}</td>" in text
-    assert "not a finding about specific neighborhoods" in text
+        assert f"{rec['loadonly_cut_share']:.0%} ({rec['loadonly_cut_count']} of 200)" in text
+        assert f"{'Yes' if rec['vuln_aware_cuts'] else 'No'} (cut in {rec['vuln_aware_cut_settings']} of {rec['n_settings']} settings)" in text
+    for col in ("% of load-only plans that cut it", "Vulnerability-aware plan cuts it?"):
+        assert col in text
+    assert "not a uniform sample of all load-only plans, so these frequencies are indicative" in text
+    assert ">SVI</span> of 0.75 or more, or an electric-heat share of 50% or more" in text
 
 
 def test_robustness_card_counts_come_from_the_table(default_page):

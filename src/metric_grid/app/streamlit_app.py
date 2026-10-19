@@ -190,19 +190,23 @@ sens = A["sens"]
 rows = pd.DataFrame(sens["rows"])
 
 with c1, st.container(border=True):
-    st.markdown("<div class='serif' style='font-size:1.2rem;font-weight:700'>Where to plan first</div>", unsafe_allow_html=True)
-    st.markdown("<p class='scaling'>Zones the typical load-only plan cuts that the vulnerability-aware plan spares in every setting with "
-                "alpha above 0, most vulnerable first. The last column is how often the equivalent load-only plans cut the zone: it is low, "
-                "because those plans differ a lot, so read the list as an illustration, not a ranking.</p>", unsafe_allow_html=True)
+    st.markdown("<div class='serif' style='font-size:1.2rem;font-weight:700'>Vulnerable zones most often cut when only megawatts count</div>", unsafe_allow_html=True)
+    pcfg = cfg["priority_list"]
+    st.markdown(f"<p class='scaling'>Among zones with {copy.tip('SVI', 'SVI')} of {pcfg['svi_min']:.2f} or more, or an electric-heat share of "
+                f"{pcfg['electric_heat_min']:.0%} or more, the ones that the {n_plans} equivalent load-only plans cut most often. "
+                "The last column says whether the vulnerability-aware plan cuts the zone.</p>", unsafe_allow_html=True)
     body = "".join(
         f"<tr><td>{p['zone_id']}</td><td>{p['COUNTY'].replace(' County', '')}</td><td>{p['RPL_THEMES']:.2f}</td>"
         f"<td>{p['share_electric_heat']:.0%}</td><td>{p['occupied_units']:,.0f}</td>"
-        f"<td>{p['loadonly_cut_share']:.0%}</td><td>{'cut at alpha 0' if p['cut_at_alpha0'] else ''}</td></tr>" for p in sens["priority_list"])
-    st.markdown(f"<table class='t'><tr><th>Zone</th><th>County</th><th>{copy.tip('SVI', 'SVI')}</th><th>Electric heat</th><th>Households</th><th>Load-only plans that cut it</th><th>Note</th></tr>"
-                f"{body}</table>", unsafe_allow_html=True)
-    st.markdown("<p class='scaling' style='margin-top:.5rem'><b>This is what the model spares across settings, not a finding about "
-                "specific neighborhoods.</b> Follow-ups to consider: outreach, backup-power planning, resilience-hub siting, "
-                "request utility network data. Never a switching recommendation.</p>", unsafe_allow_html=True)
+        f"<td>{p['loadonly_cut_share']:.0%} ({p['loadonly_cut_count']} of {n_plans})</td>"
+        f"<td>{'Yes' if p['vuln_aware_cuts'] else 'No'} (cut in {p['vuln_aware_cut_settings']} of {p['n_settings']} settings)</td></tr>"
+        for p in sens["priority_list"])
+    st.markdown(f"<table class='t'><tr><th>Zone</th><th>County</th><th>{copy.tip('SVI', 'SVI')}</th><th>Electric heat</th><th>Households</th>"
+                f"<th>% of load-only plans that cut it</th><th>Vulnerability-aware plan cuts it?</th></tr>{body}</table>", unsafe_allow_html=True)
+    st.markdown("<p class='scaling' style='margin-top:.5rem'><b>The load-only plans are not a uniform sample of all load-only plans, so these "
+                "frequencies are indicative, not exact.</b> This is what the model shows, not a finding about specific neighborhoods. Follow-ups to "
+                "consider: outreach, backup-power planning, resilience-hub siting, request utility network data. Never a switching "
+                "recommendation.</p>", unsafe_allow_html=True)
     st.markdown(f"<p class='scaling'>Critical facilities: {consts['n_protected']} zones with a hospital, nursing home or water treatment "
                 f"plant are never cut ({consts['protected_load_mw'] / consts['D_NC08_mw']:.1%} of modeled load); the facility data may be "
                 "incomplete.</p>", unsafe_allow_html=True)

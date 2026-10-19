@@ -258,3 +258,14 @@ def test_app_screenshots_are_compressed():
 def test_loadonly_plans_file_is_present_and_small_enough_to_commit():
     f = ROOT / "data" / "frozen" / "loadonly_plans.json"
     assert f.exists() and f.stat().st_size < 1_000_000
+
+
+def test_shotlist_names_the_frequency_priority_card():
+    text = (ROOT / "docs" / "VIDEO_SHOTLIST.md").read_text()
+    assert "Vulnerable zones most often cut when only megawatts count" in text
+    assert "Where to plan first" not in text
+
+
+def test_one_optimum_statement_appears_exactly_once():
+    text = (ROOT / "docs" / "ASSUMPTIONS.md").read_text()
+    assert text.count("no distribution of equivalent vulnerability-aware plans was generated") == 1

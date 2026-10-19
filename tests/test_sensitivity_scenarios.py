@@ -108,14 +108,6 @@ def test_live_rerun_matches_frozen_default_row(rows, consts):
     assert row["weighted_zone_ids"] == f["weighted_zone_ids"] and row["households_change"] == f["households_change"]
 
 
-def test_spared_zones_are_baseline_cut_and_never_weighted_cut(sens, rows):
-    ever = set().union(*[set(i) for i in rows["weighted_zone_ids"]])
-    for rec in sens["spared_every_setting"]:
-        assert rec["zone_id"] in sens["default_baseline_ids"] and rec["zone_id"] not in ever
-    pos = {r["zone_id"] for r in sens["spared_excluding_alpha0"]}
-    assert {r["zone_id"] for r in sens["spared_every_setting"]} <= pos  # dropping alpha=0 can only add zones
-
-
 # ---------------- scenarios ----------------
 
 def test_scenarios_nested_and_consistent():
@@ -196,26 +188,43 @@ def test_alpha_sweep_rows_and_figure_exist():
     assert (ROOT / "docs" / "figures" / "alpha_tradeoff.png").stat().st_size > 10_000
 
 
-# ---------------- priority list ("where to plan first") ----------------
+# ---------------- priority list ("Vulnerable zones most often cut when only megawatts count") ----------------
 
 def test_priority_list_definition(sens, rows):
     pl = pd.DataFrame(sens["priority_list"])
-    pos = rows[rows["alpha"] > 0]
-    ever_pos = set().union(*[set(i) for i in pos["weighted_zone_ids"]])
-    zero = rows[rows["alpha"] == 0]
-    ever_zero = set().union(*[set(i) for i in zero["weighted_zone_ids"]])
-    assert set(pl["zone_id"]) == set(sens["default_baseline_ids"]) - ever_pos  # the definition, recomputed from the table
+    p = CFG["priority_list"]
+    assert p == {"svi_min": 0.75, "electric_heat_min": 0.5, "max_rows": 10} and len(pl) == p["max_rows"]
+    z = frozen.load_zones().set_index("zone_id")
+    plans = frozen.load_loadonly()["sets"]["elliott|free"]["plans"]
+    counts = {i: sum(i in pl_ for pl_ in plans) for i in z.index}
     for r in pl.itertuples():
-        assert r.zone_id in sens["default_baseline_ids"] and r.zone_id not in ever_pos
-        assert r.cut_at_alpha0 == (r.zone_id in ever_zero)
-    assert list(pl["RPL_THEMES"]) == sorted(pl["RPL_THEMES"], reverse=True)
-    assert {"COUNTY", "share_electric_heat", "occupied_units"} <= set(pl.columns)
-    assert set(pl.loc[pl["cut_at_alpha0"], "zone_id"]) == set(pl["zone_id"]) & ever_zero
-    assert len(pl) >= 4
+        zone = z.loc[r.zone_id]
+        assert not zone["protected"] and (zone["RPL_THEMES"] >= p["svi_min"] or zone["share_electric_heat"] >= p["electric_heat_min"])
+        assert r.loadonly_cut_count == counts[r.zone_id] and r.loadonly_cut_share == pytest.approx(counts[r.zone_id] / 200)
+    assert list(pl["loadonly_cut_count"]) == sorted(pl["loadonly_cut_count"], reverse=True)  # ranked by frequency
+    # nothing qualifying was left out: every other qualifying zone is cut no more often than the last listed one
+    qual = z[(~z["protected"]) & ((z["RPL_THEMES"] >= p["svi_min"]) | (z["share_electric_heat"] >= p["electric_heat_min"]))]
+    others = qual.drop(index=list(pl["zone_id"]))
+    assert max(counts[i] for i in others.index) <= pl["loadonly_cut_count"].min()
+
+
+def test_priority_list_vulnerability_aware_flags_match_the_runs(sens, rows):
+    pl = pd.DataFrame(sens["priority_list"])
+    d0 = rows[(rows["setting"] == "grid") & (rows["alpha"] == 0.5) & (rows["w_svi"] == 0.7)].iloc[0]
+    for r in pl.itertuples():
+        assert r.vuln_aware_cuts == (r.zone_id in d0["weighted_zone_ids"])
+        assert r.vuln_aware_cut_settings == sum(r.zone_id in ids for ids in rows["weighted_zone_ids"]) and r.n_settings == len(rows)
+
+
+def test_priority_list_excludes_zones_without_svi_data_and_protected_zones():
+    z = frozen.load_zones()
+    pl = pd.DataFrame(frozen.load_sensitivity()["priority_list"])
+    assert not set(pl["zone_id"]) & set(z.loc[z["protected"], "zone_id"]) and 9 not in set(pl["zone_id"])  # zone 9: no SVI data
 
 
 def test_priority_list_live_matches_frozen(sens, consts):
     z = frozen.load_zones()
     res = sensitivity.full_sensitivity(z, CFG, consts["kw_per_job"], consts["D_NC08_mw"], consts["T_NC08_mw"], frozen.load_loadonly()["sets"])
-    live = sensitivity.priority_list(z, res)
+    live = sensitivity.priority_list(z, res, CFG)
     assert list(live["zone_id"]) == [r["zone_id"] for r in sens["priority_list"]]
+    assert list(live["loadonly_cut_count"]) == [r["loadonly_cut_count"] for r in sens["priority_list"]]

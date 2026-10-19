@@ -14,3 +14,4 @@
 - Phase 4.5: Streamlit app (two pydeck maps, flip strip, priority list, zone detail, robustness card, methods drawer), offline blank map style, pre-solved grid with cap on/off (40 records), app tests, Playwright screenshots.
 - Phase 6: README, VIDEO_SHOTLIST, REVIEWS template, per-file AI_DISCLOSURE, audit tests, demo locations (3 public buildings), zone 8 default, tooltips, empty/infeasible/missing-data states, `make demo`.
 - Housekeeping: example locations that illustrate differences (zone 23, zone 141, Robeson library); verified prior-work citations (NCUC removed); slider snaps to Elliott/10/15/20; requirements split and pinned; firmware folder deleted; spec amendments table; clean-clone skips noted.
+- Priority list is now frequency-based: high-vulnerability zones (SVI >= 0.75 or electric-heat >= 50%, in config) ranked by the share of the 200 load-only plans that cut them; card retitled; ASSUMPTIONS notes the vulnerability-aware plan is a single optimum.

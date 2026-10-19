@@ -130,12 +130,9 @@ def write_model_outputs(cfg: dict, zones: gpd.GeoDataFrame, kw_per_job: float, c
                                   "sets": sets})
     _dump("presolved.json", scen.presolve_grid(z, cfg, kw_per_job, D, T, sets))
     res = sens.full_sensitivity(z, cfg, kw_per_job, D, T, sets)
-    spared = sens.spared_every_setting(z, res, k=10)
-    spared_pos = sens.spared_every_setting(z, res, k=10, min_alpha=0.01)
-    prio = sens.priority_list(z, res)
+    prio = sens.priority_list(z, res, cfg)
     _dump("sensitivity.json", {"rows": res["rows"].to_dict("records"), "classes": res["classes"],
-                               "default_baseline_ids": res["default_baseline_ids"], "spared_every_setting": spared.to_dict("records"),
-                               "spared_excluding_alpha0": spared_pos.to_dict("records"), "priority_list": prio.to_dict("records")})
+                               "default_baseline_ids": res["default_baseline_ids"], "priority_list": prio.to_dict("records")})
     sc = scen.run_scenarios(z, cfg, kw_per_job, D, sets)
     _dump("scenarios.json", {"rows": sc["rows"].to_dict("records"), "cut_in_all": sc["cut_in_all"], "only_worst": sc["only_worst"],
                              "worst_pct": sc["worst_pct"]})

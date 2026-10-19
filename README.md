@@ -48,7 +48,7 @@ A small model of winter hourly demand for the two Duke balancing authorities fro
 - **Critical-facility exclusions are conservative and incomplete.** Zones with a hospital, nursing home or water treatment plant are never cut (26 zones, 16.5% of modeled load). The facility points come from OpenStreetMap, which is incomplete. Fire and police stations are display-only.
 - **Costs are 2013 dollars and one commercial rate.** The LBNL report gives costs by customer size, not by sector, and per average kW, which likely overstates a cold-morning job. The Small C&I rate is a sensitivity row.
 - **Judgment calls:** harm weights (0.7 SVI, 0.3 electric heat), a 1-hour outage, a 2% band, a 10 kW baseline tolerance, splitting counties served by both utilities by estimated customers, and using each utility's maximum shed. All are in `config.yaml` and varied in the sensitivity table.
-- **No validation against actual outage records.** Nothing here says where Duke did or would cut. The priority list is what *this model* spares across settings, not a finding about specific neighborhoods.
+- **No validation against actual outage records.** Nothing here says where Duke did or would cut. The priority list (high-vulnerability zones that the most load-only plans cut) comes from a plan set that is not a uniform sample, so its frequencies are indicative, not a finding about specific neighborhoods.
 
 ## Run it (works offline)
 

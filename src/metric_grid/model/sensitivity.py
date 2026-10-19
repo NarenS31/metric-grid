@@ -13,6 +13,8 @@ of the N load-only plans the vulnerability-aware plan beats on each metric.
 Zones are classed by how often the vulnerability-aware plan cuts them: always, sometimes, never (selectable but never cut),
 or protected (never selectable).
 """
+import collections
+
 import pandas as pd
 
 from metric_grid.model import harm, loadonly, optimizer
@@ -94,35 +96,31 @@ def full_sensitivity(zones: pd.DataFrame, cfg: dict, kw_per_job: float, d_nc08: 
             "default_baseline_ids": base_row["baseline_zone_ids"], "default_plans": free, "default_row": base_row}
 
 
-def spared_every_setting(zones: pd.DataFrame, result: dict, k: int = 5, min_alpha: float = 0.0) -> pd.DataFrame:
-    """Zones the typical load-only plan (default setting) cuts that the vulnerability-aware plan never cuts, most vulnerable first.
+def priority_list(zones: pd.DataFrame, result: dict, cfg: dict) -> pd.DataFrame:
+    """"Vulnerable zones most often cut when only megawatts count".
 
-    Considers every setting with alpha >= min_alpha (min_alpha=0 means all settings; a small positive value excludes the
-    economic-only alpha = 0 settings, where harm is ignored by construction).
-    """
-    rows = result["rows"]
-    rows = rows[rows["solved"] & (rows["alpha"] >= min_alpha)]
-    ever = set().union(*[set(i) for i in rows["weighted_zone_ids"]])
-    ids = [i for i in result["default_baseline_ids"] if i not in ever]
-    s = zones[zones["zone_id"].isin(ids)].sort_values("RPL_THEMES", ascending=False)
-    return s[["zone_id", "GEOID", "COUNTY", "RPL_THEMES", "share_electric_heat", "occupied_units", "L_mw"]].head(k)
-
-
-def priority_list(zones: pd.DataFrame, result: dict) -> pd.DataFrame:
-    """The 'where to plan first' list: zones the TYPICAL load-only plan cuts that the vulnerability-aware plan spares in EVERY
-    setting with alpha > 0. `cut_at_alpha0` flags zones the economic-only (alpha = 0) settings do cut; `loadonly_cut_share` is the
-    share of the equivalent load-only plans that cut the zone. Ordered by SVI, highest first. Built only from computed values;
-    it is not a switching recommendation."""
+    Among unprotected zones with SVI >= priority_list.svi_min OR electric-heat share >= priority_list.electric_heat_min (config),
+    rank by the number of load-only plans (the default plan set) that cut the zone; ties: higher SVI, then lower zone_id. Keeps the
+    top max_rows. `vuln_aware_cuts` says whether the vulnerability-aware plan cuts the zone in the default setting, and
+    `vuln_aware_cut_settings` in how many of the sensitivity settings. The plan set is not a uniform sample, so frequencies are
+    indicative. Built only from computed values; it is not a switching recommendation."""
+    p = cfg["priority_list"]
+    plans = result["default_plans"]
+    counts = collections.Counter(int(i) for plan in plans for i in plan)
     rows = result["rows"]
     solved = rows[rows["solved"]]
-    ever_pos = set().union(*[set(i) for i in solved.loc[solved["alpha"] > 0, "weighted_zone_ids"]])
-    ever_zero = set().union(*[set(i) for i in solved.loc[solved["alpha"] == 0, "weighted_zone_ids"]])
-    ids = [i for i in result["default_baseline_ids"] if i not in ever_pos]
-    s = zones[zones["zone_id"].isin(ids)].sort_values("RPL_THEMES", ascending=False).copy()
-    s["cut_at_alpha0"] = s["zone_id"].isin(ever_zero)
-    plans = result["default_plans"]
-    s["loadonly_cut_share"] = [sum(int(i) in p for p in plans) / len(plans) for i in s["zone_id"]]
-    return s[["zone_id", "GEOID", "COUNTY", "RPL_THEMES", "share_electric_heat", "occupied_units", "L_mw", "cut_at_alpha0", "loadonly_cut_share"]]
+    in_settings = collections.Counter(int(i) for ids in solved["weighted_zone_ids"] for i in ids)
+    default_cuts = set(int(i) for i in result["default_row"]["weighted_zone_ids"])
+    z = zones[~zones["protected"]]
+    s = z[(z["RPL_THEMES"] >= p["svi_min"]) | (z["share_electric_heat"] >= p["electric_heat_min"])].copy()  # NaN never qualifies
+    s["loadonly_cut_count"] = [counts.get(int(i), 0) for i in s["zone_id"]]
+    s["loadonly_cut_share"] = s["loadonly_cut_count"] / len(plans)
+    s["vuln_aware_cuts"] = [int(i) in default_cuts for i in s["zone_id"]]
+    s["vuln_aware_cut_settings"] = [in_settings.get(int(i), 0) for i in s["zone_id"]]
+    s["n_settings"] = len(solved)
+    s = s.sort_values(["loadonly_cut_count", "RPL_THEMES", "zone_id"], ascending=[False, False, True]).head(p["max_rows"])
+    return s[["zone_id", "GEOID", "COUNTY", "RPL_THEMES", "share_electric_heat", "occupied_units", "L_mw", "loadonly_cut_count",
+              "loadonly_cut_share", "vuln_aware_cuts", "vuln_aware_cut_settings", "n_settings"]]
 
 
 def alpha_sweep(zones: pd.DataFrame, cfg: dict, kw_per_job: float, d_nc08: float, target: float, sets: dict) -> pd.DataFrame:
