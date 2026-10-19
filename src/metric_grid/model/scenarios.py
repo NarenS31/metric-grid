@@ -80,3 +80,12 @@ def presolve_grid(zones: pd.DataFrame, cfg: dict, kw_per_job: float, d_nc08: flo
                            zones_differ=r.zones_that_differ(), solve_seconds=r.solve_seconds, summary=plain_summary(r))
             out.append(rec)
     return out
+
+
+def county_breakdown(zones: pd.DataFrame, plan) -> pd.DataFrame:
+    """Per-county totals for one plan's cut zones: zones, MW, share of the cut, households, mean SVI. `zones` needs COUNTY."""
+    t = zones[zones["zone_id"].isin(plan.zone_ids)]
+    g = t.groupby("COUNTY").agg(zones=("zone_id", "count"), mw=("L_mw", "sum"), households=("occupied_units", "sum"),
+                                mean_svi=("RPL_THEMES", "mean"))
+    g["share_of_cut"] = g["mw"] / g["mw"].sum()
+    return g.sort_values("mw", ascending=False)

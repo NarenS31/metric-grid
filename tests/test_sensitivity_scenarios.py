@@ -33,9 +33,9 @@ def consts():
 # ---------------- sensitivity ----------------
 
 def test_setting_count_and_kinds(rows):
-    assert len(rows) == 19 and rows["solved"].all()
+    assert len(rows) == 20 and rows["solved"].all()
     assert (rows["setting"] == "grid").sum() == 15
-    assert set(rows["setting"]) >= {"grid", "band 1%", "band 5%", "Small C&I cost rate", "flat allocation weights"}
+    assert set(rows["setting"]) >= {"grid", "band 1%", "band 5%", "Small C&I cost rate", "flat allocation weights", "county-share cap 50%"}
 
 
 def test_classes_partition_all_zones(sens):
@@ -54,7 +54,7 @@ def test_always_zones_are_cut_in_every_setting_and_never_zones_in_none(sens, row
 
 
 def test_baseline_unchanged_by_harm_settings(rows):
-    nonflat = rows[~rows["flat"]]
+    nonflat = rows[~rows["flat"] & rows["county_cap"].isna()]
     assert nonflat["baseline_zone_ids"].map(tuple).nunique() == 1  # baseline ignores alpha, weights and cost class
 
 
@@ -81,6 +81,11 @@ def test_band_rows_match_default_and_small_cost_row_differs(rows):
         assert rows[rows["setting"] == name].iloc[0]["weighted_zone_ids"] == d["weighted_zone_ids"]
     small = rows[rows["setting"] == "Small C&I cost rate"].iloc[0]
     assert small["human_change_pct"] == pytest.approx(d["human_change_pct"]) and small["econ_change_pct"] < d["econ_change_pct"]
+
+
+def test_cap_row_is_present_and_still_cuts_more_households(rows):
+    cap = rows[rows["setting"] == "county-share cap 50%"].iloc[0]
+    assert cap["county_cap"] == 0.5 and cap["households_change"] > 0 and cap["human_change_pct"] < 0
 
 
 def test_flat_loads_sum_to_d_nc08_and_change_the_answer(consts, rows):
@@ -169,3 +174,27 @@ def test_alpha_sweep_rows_and_figure_exist():
     assert sw["human_change_pct"].iloc[-1] < sw["human_change_pct"].iloc[0]
     assert (sw["households_change"] > 0).all()
     assert (ROOT / "docs" / "figures" / "alpha_tradeoff.png").stat().st_size > 10_000
+
+
+# ---------------- priority list ("where to plan first") ----------------
+
+def test_priority_list_definition(sens, rows):
+    pl = pd.DataFrame(sens["priority_list"])
+    assert set(pl["zone_id"]) == {8, 23, 10, 32, 142, 12}
+    pos = rows[rows["alpha"] > 0]
+    ever_pos = set().union(*[set(i) for i in pos["weighted_zone_ids"]])
+    zero = rows[rows["alpha"] == 0]
+    ever_zero = set().union(*[set(i) for i in zero["weighted_zone_ids"]])
+    for r in pl.itertuples():
+        assert r.zone_id in sens["default_baseline_ids"] and r.zone_id not in ever_pos
+        assert r.cut_at_alpha0 == (r.zone_id in ever_zero)
+    assert list(pl["RPL_THEMES"]) == sorted(pl["RPL_THEMES"], reverse=True)
+    assert {"COUNTY", "share_electric_heat", "occupied_units"} <= set(pl.columns)
+    assert set(pl.loc[pl["cut_at_alpha0"], "zone_id"]) == {8, 10}
+
+
+def test_priority_list_live_matches_frozen(sens, consts):
+    z = frozen.load_zones()
+    res = sensitivity.full_sensitivity(z, CFG, consts["kw_per_job"], consts["D_NC08_mw"], consts["T_NC08_mw"])
+    live = sensitivity.priority_list(z, res)
+    assert list(live["zone_id"]) == [r["zone_id"] for r in sens["priority_list"]]

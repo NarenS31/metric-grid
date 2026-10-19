@@ -63,12 +63,23 @@ Both plans use the same band: T_NC08 <= sum x_i L_i <= T_NC08 + delta, delta = 2
 
 **Spec deviation (approved 2026-10-18): the demo safety-net grid is pre-solved at `make freeze`, not at app startup.** The 10/15/20% presets take 2 to 3 s per solve, so solving 15 points at startup would take about 40 s. `presolved.json` holds 20 points: alpha {0, .25, .5, .75, 1} x targets {Elliott T_NC08, 10%, 15%, 20% of D_NC08}; the Elliott row is added because it is the default scenario. The app falls back to the nearest point (with a visible "showing nearest pre-computed setting" note) if a live solve errors or exceeds 2 s.
 
-**Sensitivity settings (19, weighted plan vs load-only baseline at T_NC08 = 91.9 MW):** alpha {0, .25, .5, .75, 1} x w_svi {.5, .7, .9} (15); band 1% and 5% (2% is in the grid); Small C&I cost rate; flat allocation weights (1 per housing unit + 1 per job instead of 5.43 and 1.39 kW, renormalized to the same D_NC08; this also changes the baseline).
-- **Zone classes by the weighted plan's cuts:** always cut in every setting: 0. Sometimes: 36. Never cut although selectable: 121. Protected (never selectable): 26. The most frequently cut zones are 144 and 178 (15 of 19 settings each).
-- **Human harm:** the weighted plan has lower vulnerability-weighted households cut in 16 of 19 settings (-53% to -91%). It is HIGHER (+49% to +50%) in the three alpha = 0 settings, where human harm is ignored by construction. It beats the baseline on interruption cost in all 19 settings.
-- **Households:** the weighted plan cuts MORE households in all 19 settings (+87 to +6,799; +2,513, +16%, in the default setting). Every UI place that shows vulnerability or cost results must say so plainly next to those numbers (`scenarios.plain_summary` builds the sentence from the numbers and says "MORE" or "fewer" as the data says).
+**Sensitivity settings (20, weighted plan vs load-only baseline at T_NC08 = 91.9 MW):** alpha {0, .25, .5, .75, 1} x w_svi {.5, .7, .9} (15); band 1% and 5% (2% is in the grid); Small C&I cost rate; flat allocation weights (1 per housing unit + 1 per job instead of 5.43 and 1.39 kW, renormalized to the same D_NC08; this also changes the baseline); county-share cap 50% (below; also changes the baseline).
+- **Zone classes by the weighted plan's cuts:** always cut in every setting: 0. Sometimes: 37. Never cut although selectable: 120. Protected (never selectable): 26. The most frequently cut zones are 144 and 178 (15 of 20 settings each).
+- **Human harm:** the weighted plan has lower vulnerability-weighted households cut in 17 of 20 settings (-53% to -91%). It is HIGHER (+49% to +50%) in the three alpha = 0 settings, where human harm is ignored by construction. It beats the baseline on interruption cost in all 20 settings.
+- **Households:** the weighted plan cuts MORE households in all 20 settings (+87 to +6,799; +2,513, +16%, in the default setting). Every UI place that shows vulnerability or cost results must say so plainly next to those numbers (`scenarios.plain_summary` builds the sentence from the numbers and says "MORE" or "fewer" as the data says).
 - **Band 1% / 2% / 5%:** identical plans. **Small C&I cost rate:** same plan, interruption cost change -54% instead of -43%. **Flat allocation:** baseline 5 zones vs weighted 12 zones, human harm -61%, cost -26%, +6,799 households; so the allocation assumption matters, but the direction does not change.
-- **Baseline cut zones the weighted plan spares in every setting:** zones 23 (Cabarrus, SVI 0.83, electric heat 62%, 2,308 households), 32, 142, 12. Zones 8 (Anson, SVI 0.91, electric heat 67%, 1,498 households) and 10 (Cabarrus, SVI 0.64, 62%, 3,178 households) are spared in every setting except alpha = 0.
+- **Priority list ("where to plan first"), the definition used by the planning-implications card.** Since no zone is always cut, the list is the zones the default load-only baseline cuts that the vulnerability-aware plan spares in EVERY setting with alpha > 0, ordered by SVI. Six zones (`cut at alpha 0` marks the two that the economic-only settings do cut):
+
+  | Zone | County | SVI | Electric-heat share | Households | Note |
+  |---|---|---|---|---|---|
+  | 8 | Anson | 0.91 | 67% | 1,498 | cut when alpha = 0 |
+  | 23 | Cabarrus | 0.83 | 62% | 2,308 | |
+  | 10 | Cabarrus | 0.64 | 62% | 3,178 | cut when alpha = 0 |
+  | 32 | Cabarrus | 0.32 | 52% | 3,556 | |
+  | 142 | Union | 0.29 | 24% | 2,429 | |
+  | 12 | Cabarrus | 0.11 | 81% | 2,474 | |
+
+  The card is built only from these computed values and fixed-text follow-ups (outreach, backup-power planning, resilience-hub siting, request utility circuit data); it is never a switching recommendation. The list is a statement about this model and its settings, not a verified finding about specific neighborhoods.
 - **Where the cuts land (default).** Baseline: Cabarrus 4 zones (63.7 MW, 11,516 households, mean SVI 0.48), Anson 1 (8.7 MW, 1,498 households, SVI 0.91), Union 1 (19.6 MW, 2,429 households, SVI 0.29). Weighted: Union 9 zones (81.5 MW, 15,910 households, mean SVI 0.04) and Mecklenburg 1 (10.7 MW, 2,046 households, SVI 0.01). The weighted plan concentrates its cuts in one county with very low vulnerability, which is a fairness concern of its own (cumulative burden on one place), and it is a version 2.0 item.
 
 **Scenarios (alpha 0.5):**
@@ -92,6 +103,25 @@ Zones cut in all three scenarios: baseline 11, weighted 18. Zones cut only in th
 | 1 | -83% | -2% | +1,202 (+8%) |
 
 **Dollar labeling.** Every dollar figure in the UI is labeled "2013 dollars" (ICE report dollars, not inflated).
+
+## County-share cap (optional, default OFF; added 2026-10-18)
+
+In the default scenario the baseline puts 69% of its cut in Cabarrus County and the weighted plan puts 88% in Union County. As a response to cumulative-burden concentration the optimizer has an optional constraint (`optimizer.county_cap`, enabled: false, max_share: 0.5): no single county may take more than 50% of the total MW cut. It is linear (county MW <= share x total MW cut), applied to BOTH plans equally, and changes the baseline too. Infeasible if the unprotected load is in too few counties (the result says so). Solve time about 1.3 s (the default without the cap is about 0.5 s). It limits concentration by county only; it does not make the weighted plan spread cuts to vulnerable counties.
+
+**Default scenario with the cap ON (alpha 0.5, band 91.91 to 93.75 MW, T_NC08 = 91.9 MW):**
+
+| | Baseline | Weighted | Weighted vs baseline |
+|---|---|---|---|
+| MW cut | 91.92 | 92.24 | |
+| Zones cut | 6 | 10 | |
+| Households cut | 15,197 | 16,891 | +1,694 (+11.1%) MORE households |
+| Electric-heat households | | | -2,202 (fewer) |
+| Vulnerability-weighted households | 5,556 | 2,266 | -59.2% |
+| Interruption cost (2013 dollars) | $556,726 | $280,901 | -49.5% |
+
+Counties (share of MW cut): baseline Cabarrus 3 zones 45.3 MW (49%), Mecklenburg 2 zones 27.1 MW (29%), Union 1 zone 19.6 MW (21%). Weighted: Union 5 zones 45.6 MW (49%), Mecklenburg 4 zones 32.5 MW (35%), Montgomery 1 zone 14.1 MW (15%).
+
+Compared with the cap OFF numbers (weighted: 88% of cuts in Union; vulnerability-weighted households 2,053; cost $271,958; +2,513 households), the cap moves the baseline AWAY from the high-SVI Anson zone (baseline vulnerability-weighted households 7,860 -> 5,556, cost $478,888 -> $556,726), so the gap in human harm narrows from -74% to -59%, while the weighted plan is only slightly worse in absolute terms (2,053 -> 2,266). The weighted plan still cuts more households. The cap is a sensitivity row (`county-share cap 50%`) in the sensitivity table; the pre-solved demo grid stays cap-OFF.
 
 ## Data-source failures and fallbacks
 See

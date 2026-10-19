@@ -4,7 +4,9 @@ Both plans pick zones x_i in {0,1}, with x_i = 0 for protected zones, so that th
     T_NC08 <= sum x_i L_i <= T_NC08 + delta,        delta = band_pct of T_NC08.
 Stage A (load-only baseline):      minimize sum x_i L_i                (least overshed, optimal within load_tol_mw = 10 kW).
 Stage B (vulnerability-aware):     minimize sum x_i H_i(alpha)         (lowest modeled harm).
-Ties are broken by fewest zones, then lowest zone_id (three sequential solves per plan). If the band has no solution it is
+Optional county-share cap (off by default): no single county may take more than `county_cap` of the total MW cut, applied to
+both plans equally (a response to cumulative-burden concentration).
+Ties are broken by fewest zones, then lowest zone_id (two solves per plan). If the band has no solution it is
 widened through the configured steps (max 5%); if still empty, or the target exceeds the unprotected load, solve() returns
 an Infeasible result carrying the maximum feasible reduction.
 """
@@ -65,7 +67,7 @@ def _solver(max_seconds: float, gap_abs: float):
                              options=[f"randomCbcSeed {CBC_SEED}", f"randomSeed {CBC_SEED}"])
 
 
-def _solve_stage(ids, L, protected, lo, hi, objective, tol, max_seconds):
+def _solve_stage(ids, L, protected, lo, hi, objective, tol, max_seconds, county_of=None, cap=None):
     """Minimize `objective` inside [lo, hi] to within `tol`, then break ties: fewest zones, then lowest zone_ids.
 
     Two solves: (1) the primary objective; (2) among solutions within `tol` of it, minimize M*count + sum(zone_id) with
@@ -80,6 +82,9 @@ def _solve_stage(ids, L, protected, lo, hi, objective, tol, max_seconds):
         load = pulp.lpSum(L[i] * x[i] for i in ids)
         prob += load >= lo
         prob += load <= hi
+        if cap is not None:  # county c: sum_{i in c} L_i x_i <= cap * sum_i L_i x_i  (linear, so no extra variables)
+            for c in sorted(set(county_of.values())):
+                prob += pulp.lpSum(L[i] * x[i] for i in ids if county_of[i] == c) <= cap * load
         return prob, x
 
     prob, x = build()
@@ -109,10 +114,11 @@ def _summarize(name, zones: pd.DataFrame, chosen: list, target: float) -> PlanRe
 
 def solve(zones: pd.DataFrame, target_mw: float, alpha: float, band_pct: float = 2.0,
           widen_pct: tuple = (3.0, 4.0, 5.0), max_seconds: float = 10.0, load_tol_mw: float = 0.01,
-          baseline_ids: list | None = None) -> "PairResult | Infeasible":
+          baseline_ids: list | None = None, county_cap: float | None = None) -> "PairResult | Infeasible":
     """Solve both plans in one shared band. `zones` needs zone_id, L_mw, protected, H_human, H_econ, Hhat_human,
     Hhat_econ, N_households, heat_electricity, jobs_total (see harm.compute_harm). The baseline does not depend on alpha or
-    the harm weights, so callers re-solving many harm settings may pass `baseline_ids` to skip Stage A."""
+    the harm weights, so callers re-solving many harm settings may pass `baseline_ids` to skip Stage A (ignored if county_cap
+    is set, because the cap changes the baseline). `county_cap` (e.g. 0.5) needs a `COUNTYFP` column on zones."""
     t0 = time.perf_counter()
     z = zones.sort_values("zone_id").reset_index(drop=True)
     free = z[~z["protected"]]
@@ -125,22 +131,28 @@ def solve(zones: pd.DataFrame, target_mw: float, alpha: float, band_pct: float =
     if len(unpriced):
         raise MissingDataError(f"zone_id {unpriced['zone_id'].tolist()} have unknown harm (missing SVI/ACS) and cannot be selected")
     ids = [int(i) for i in z["zone_id"]]
+    county_of = dict(zip(ids, z["COUNTYFP"])) if county_cap is not None else None
+    if county_cap is not None:
+        baseline_ids = None
+        if not 0 < county_cap <= 1:
+            raise ValueError("county_cap must be in (0, 1]")
     L = dict(zip(ids, z["L_mw"]))
     prot = dict(zip(ids, z["protected"]))
     Hd = dict(zip(ids, H.fillna(0.0)))  # protected zones may be NaN; they are fixed to 0 so the value is never used
     steps = [band_pct] + [w for w in widen_pct if w > band_pct]
     for pct in steps:
         lo, hi = target_mw, target_mw * (1 + pct / 100)
-        a = list(baseline_ids) if baseline_ids is not None else _solve_stage(ids, L, prot, lo, hi, L, load_tol_mw, max_seconds)
+        a = list(baseline_ids) if baseline_ids is not None else _solve_stage(ids, L, prot, lo, hi, L, load_tol_mw, max_seconds, county_of, county_cap)
         if baseline_ids is not None and not lo - 1e-9 <= sum(L[i] for i in a) <= hi + 1e-9:
             a = _solve_stage(ids, L, prot, lo, hi, L, load_tol_mw, max_seconds)  # supplied baseline is outside this band
         if a is None:
             continue
-        b = _solve_stage(ids, L, prot, lo, hi, Hd, 1e-4, max_seconds)
+        b = _solve_stage(ids, L, prot, lo, hi, Hd, 1e-4, max_seconds, county_of, county_cap)
         if b is None:
             continue
         return PairResult(target_mw, lo, hi, pct, pct != band_pct, alpha, _summarize("load-only baseline", z, a, target_mw),
                           _summarize("harm-weighted plan", z, b, target_mw), time.perf_counter() - t0, z)
     return Infeasible(target_mw, max_feasible, f"No combination of unprotected zones lands within {target_mw:.1f} to "
-                      f"{target_mw * (1 + steps[-1] / 100):.1f} MW (band widened up to {steps[-1]:.0f}%). Maximum feasible "
-                      f"reduction is {max_feasible:.1f} MW.")
+                      f"{target_mw * (1 + steps[-1] / 100):.1f} MW (band widened up to {steps[-1]:.0f}%)"
+                      f"{f' with no county above {county_cap:.0%} of the cut' if county_cap is not None else ''}. "
+                      f"Maximum feasible reduction is {max_feasible:.1f} MW.")

@@ -66,7 +66,7 @@
    118,
    142
   ],
-  "solve_seconds": 0.6900021660003404,
+  "solve_seconds": 0.5471383330004755,
   "summary": "The harm-weighted plan cuts 2,256 MORE households (+15%) than the load-only baseline, but 50% more vulnerability-weighted households and 69% lower modeled interruption cost (2013 dollars)."
  },
  {
@@ -134,7 +134,7 @@
    178,
    181
   ],
-  "solve_seconds": 0.15412787500099512,
+  "solve_seconds": 0.11402604099566815,
   "summary": "The harm-weighted plan cuts 215 MORE households (+1%) than the load-only baseline, but 64% fewer vulnerability-weighted households and 54% lower modeled interruption cost (2013 dollars)."
  },
  {
@@ -202,7 +202,7 @@
    178,
    181
   ],
-  "solve_seconds": 0.0956834999997227,
+  "solve_seconds": 0.08054249999986496,
   "summary": "The harm-weighted plan cuts 2,513 MORE households (+16%) than the load-only baseline, but 74% fewer vulnerability-weighted households and 43% lower modeled interruption cost (2013 dollars)."
  },
  {
@@ -272,7 +272,7 @@
    181,
    182
   ],
-  "solve_seconds": 0.12834245799967903,
+  "solve_seconds": 0.10248012500233017,
   "summary": "The harm-weighted plan cuts 1,772 MORE households (+11%) than the load-only baseline, but 81% fewer vulnerability-weighted households and 16% lower modeled interruption cost (2013 dollars)."
  },
  {
@@ -342,7 +342,7 @@
    182,
    183
   ],
-  "solve_seconds": 0.11798712499876274,
+  "solve_seconds": 0.09357066700613359,
   "summary": "The harm-weighted plan cuts 1,202 MORE households (+8%) than the load-only baseline, but 83% fewer vulnerability-weighted households and 2% lower modeled interruption cost (2013 dollars)."
  },
  {
@@ -444,7 +444,7 @@
    169,
    177
   ],
-  "solve_seconds": 2.4075252500006172,
+  "solve_seconds": 2.584999999999127,
   "summary": "The harm-weighted plan cuts 5,401 MORE households (+20%) than the load-only baseline, but 43% more vulnerability-weighted households and 68% lower modeled interruption cost (2013 dollars)."
  },
  {
@@ -540,7 +540,7 @@
    178,
    181
   ],
-  "solve_seconds": 0.25630304100195644,
+  "solve_seconds": 0.2289400830049999,
   "summary": "The harm-weighted plan cuts 3,802 MORE households (+14%) than the load-only baseline, but 60% fewer vulnerability-weighted households and 53% lower modeled interruption cost (2013 dollars)."
  },
  {
@@ -632,7 +632,7 @@
    178,
    181
   ],
-  "solve_seconds": 0.1142680000011751,
+  "solve_seconds": 0.128703125003085,
   "summary": "The harm-weighted plan cuts 3,581 MORE households (+13%) than the load-only baseline, but 69% fewer vulnerability-weighted households and 43% lower modeled interruption cost (2013 dollars)."
  },
  {
@@ -728,7 +728,7 @@
    181,
    182
   ],
-  "solve_seconds": 0.09334120899802656,
+  "solve_seconds": 0.10060595799586736,
   "summary": "The harm-weighted plan cuts 4,575 MORE households (+17%) than the load-only baseline, but 76% fewer vulnerability-weighted households and 24% lower modeled interruption cost (2013 dollars)."
  },
  {
@@ -828,7 +828,7 @@
    182,
    183
   ],
-  "solve_seconds": 0.08511037499920349,
+  "solve_seconds": 0.09217262500169454,
   "summary": "The harm-weighted plan cuts 3,869 MORE households (+14%) than the load-only baseline, but 77% fewer vulnerability-weighted households and 13% lower modeled interruption cost (2013 dollars)."
  },
  {
@@ -956,7 +956,7 @@
    175,
    177
   ],
-  "solve_seconds": 1.4104591249997611,
+  "solve_seconds": 1.7092396249936428,
   "summary": "The harm-weighted plan cuts 5,706 MORE households (+14%) than the load-only baseline, but 42% more vulnerability-weighted households and 65% lower modeled interruption cost (2013 dollars)."
  },
  {
@@ -1076,7 +1076,7 @@
    180,
    181
   ],
-  "solve_seconds": 0.1143723340028373,
+  "solve_seconds": 0.12194808400090551,
   "summary": "The harm-weighted plan cuts 5,270 MORE households (+13%) than the load-only baseline, but 49% fewer vulnerability-weighted households and 50% lower modeled interruption cost (2013 dollars)."
  },
  {
@@ -1194,7 +1194,7 @@
    181,
    182
   ],
-  "solve_seconds": 0.21558974999788916,
+  "solve_seconds": 0.2364117079996504,
   "summary": "The harm-weighted plan cuts 4,825 MORE households (+12%) than the load-only baseline, but 62% fewer vulnerability-weighted households and 39% lower modeled interruption cost (2013 dollars)."
  },
  {
@@ -1314,7 +1314,7 @@
    182,
    183
   ],
-  "solve_seconds": 0.1672327909982414,
+  "solve_seconds": 0.18431770900497213,
   "summary": "The harm-weighted plan cuts 4,536 MORE households (+11%) than the load-only baseline, but 68% fewer vulnerability-weighted households and 24% lower modeled interruption cost (2013 dollars)."
  },
  {
@@ -1432,7 +1432,7 @@
    182,
    183
   ],
-  "solve_seconds": 0.10796479199780151,
+  "solve_seconds": 0.11814304199651815,
   "summary": "The harm-weighted plan cuts 2,988 MORE households (+7%) than the load-only baseline, but 69% fewer vulnerability-weighted households and 12% lower modeled interruption cost (2013 dollars)."
  },
  {
@@ -1590,7 +1590,7 @@
    177,
    181
   ],
-  "solve_seconds": 2.1688037080020877,
+  "solve_seconds": 2.5049835829995573,
   "summary": "The harm-weighted plan cuts 8,813 MORE households (+17%) than the load-only baseline, but 26% more vulnerability-weighted households and 65% lower modeled interruption cost (2013 dollars)."
  },
  {
@@ -1744,7 +1744,7 @@
    180,
    181
   ],
-  "solve_seconds": 0.19186099999933504,
+  "solve_seconds": 0.21427195800060872,
   "summary": "The harm-weighted plan cuts 9,053 MORE households (+17%) than the load-only baseline, but 47% fewer vulnerability-weighted households and 50% lower modeled interruption cost (2013 dollars)."
  },
  {
@@ -1892,7 +1892,7 @@
    182,
    183
   ],
-  "solve_seconds": 0.1620065839997551,
+  "solve_seconds": 0.16070795799896587,
   "summary": "The harm-weighted plan cuts 8,266 MORE households (+16%) than the load-only baseline, but 62% fewer vulnerability-weighted households and 36% lower modeled interruption cost (2013 dollars)."
  },
  {
@@ -2042,7 +2042,7 @@
    182,
    183
   ],
-  "solve_seconds": 0.2129724160004116,
+  "solve_seconds": 0.1816249169933144,
   "summary": "The harm-weighted plan cuts 7,721 MORE households (+15%) than the load-only baseline, but 63% fewer vulnerability-weighted households and 33% lower modeled interruption cost (2013 dollars)."
  },
  {
@@ -2184,7 +2184,7 @@
    182,
    183
   ],
-  "solve_seconds": 0.09453195800233516,
+  "solve_seconds": 0.10080158300115727,
   "summary": "The harm-weighted plan cuts 6,329 MORE households (+12%) than the load-only baseline, but 65% fewer vulnerability-weighted households and 25% lower modeled interruption cost (2013 dollars)."
  }
 ]

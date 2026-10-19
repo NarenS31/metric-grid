@@ -112,6 +112,11 @@ optimizer:
   band_widen_pct: [3.0, 4.0, 5.0]
   band_sensitivity_pct: [1.0, 2.0, 5.0]
   load_tol_mw: 0.01           # baseline is least-overshed within 10 kW (finer is not operationally meaningful and 100x slower)
+  # Optional county-share cap (toggle, default OFF): no single county takes more than max_share of the total MW cut,
+  # applied to both plans equally. A response to cumulative-burden concentration, see docs/ASSUMPTIONS.md.
+  county_cap:
+    enabled: false
+    max_share: 0.5
   target_pcts: [10, 15, 20]   # % of modeled NC-08 load
   # Default scenario target is T_NC08 (the Elliott-anchored district estimate, ~5.5% of modeled load); target_pcts are slider presets.
   alpha_grid: [0, 0.25, 0.5, 0.75, 1]

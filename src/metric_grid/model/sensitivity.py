@@ -4,9 +4,10 @@ Settings tested for the harm-weighted plan against the load-only baseline, all a
   * grid:   alpha in {0, .25, .5, .75, 1} x w_svi in {.5, .7, .9} (w_eheat = 1 - w_svi)         15 settings
   * band:   delta 1% and 5% (2% is the default grid point)
   * cost:   Small C&I interruption rate instead of Medium/Large
+  * cap:    county-share cap (no county takes more than max_share of the MW cut), both plans; changes the baseline too
   * flat:   flat allocation weights (1 per housing unit + 1 per job instead of 5.43 kW/unit and 1.39 kW/job), L renormalized
             to the same D_NC08, which also changes the baseline
-Zones are then classed: always cut by the weighted plan in every setting, sometimes, never (selectable but never cut),
+Zones are then classed (all settings, including the cap row): always cut by the weighted plan in every setting, sometimes, never (selectable but never cut),
 or protected (never selectable).
 """
 import pandas as pd
@@ -28,19 +29,21 @@ def _plan_row(prefix: str, p) -> dict:
 
 def run_setting(zones: pd.DataFrame, cfg: dict, kw_per_job: float, d_nc08: float, target: float, name: str, alpha: float,
                 w_svi: float, band_pct: float, commercial_class: str | None = None, flat: bool = False,
-                baseline_ids: list | None = None):
+                baseline_ids: list | None = None, county_cap: float | None = None):
     """Solve one setting. Returns (row dict, PairResult)."""
     z = zones.copy()
     if flat:
         z["L_mw"] = flat_loads(z, d_nc08)
     zh = harm.compute_harm(z, cfg, kw_per_job, w_svi=w_svi, w_eheat=1 - w_svi, commercial_class=commercial_class)
     r = optimizer.solve(zh, target, alpha, band_pct=band_pct, widen_pct=tuple(cfg["optimizer"]["band_widen_pct"]),
-                        load_tol_mw=cfg["optimizer"]["load_tol_mw"], baseline_ids=None if flat else baseline_ids)
+                        load_tol_mw=cfg["optimizer"]["load_tol_mw"], baseline_ids=None if flat else baseline_ids,
+                        county_cap=county_cap)
     if isinstance(r, Infeasible):
         return {"setting": name, "alpha": alpha, "w_svi": w_svi, "solved": False}, r
     b, w = r.baseline, r.weighted
     row = {"setting": name, "alpha": alpha, "w_svi": w_svi, "band_pct": band_pct, "band_used_pct": r.delta_pct_used,
-           "commercial_class": commercial_class or cfg["harm"]["ice"]["commercial_class"], "flat": flat, "solved": True,
+           "commercial_class": commercial_class or cfg["harm"]["ice"]["commercial_class"], "flat": flat,
+           "county_cap": county_cap, "solved": True,
            **_plan_row("baseline", b), **_plan_row("weighted", w),
            "zones_differ": len(r.zones_that_differ()),
            "human_change_pct": 100 * (w.h_human - b.h_human) / b.h_human,
@@ -68,6 +71,8 @@ def full_sensitivity(zones: pd.DataFrame, cfg: dict, kw_per_job: float, d_nc08: 
     rows.append(run_setting(zones, cfg, kw_per_job, d_nc08, target, "Small C&I cost rate", a0, w0, pct0, commercial_class="small",
                             baseline_ids=base_ids)[0])
     rows.append(run_setting(zones, cfg, kw_per_job, d_nc08, target, "flat allocation weights", a0, w0, pct0, flat=True)[0])
+    cap = o["county_cap"]["max_share"]
+    rows.append(run_setting(zones, cfg, kw_per_job, d_nc08, target, f"county-share cap {cap:.0%}", a0, w0, pct0, county_cap=cap)[0])
     df = pd.DataFrame(rows)
     solved = df[df["solved"]]
     cut_sets = [set(ids) for ids in solved["weighted_zone_ids"]]
@@ -91,6 +96,20 @@ def spared_every_setting(zones: pd.DataFrame, result: dict, k: int = 5, min_alph
     ids = [i for i in result["default_baseline_ids"] if i not in ever]
     s = zones[zones["zone_id"].isin(ids)].sort_values("RPL_THEMES", ascending=False)
     return s[["zone_id", "GEOID", "COUNTY", "RPL_THEMES", "share_electric_heat", "occupied_units", "L_mw"]].head(k)
+
+
+def priority_list(zones: pd.DataFrame, result: dict) -> pd.DataFrame:
+    """The 'where to plan first' list: zones the default load-only baseline cuts that the vulnerability-aware plan spares in
+    EVERY setting with alpha > 0. `cut_at_alpha0` flags zones that the economic-only (alpha = 0) settings do cut.
+    Ordered by SVI, highest first. Built only from computed values; it is not a switching recommendation."""
+    rows = result["rows"]
+    solved = rows[rows["solved"]]
+    ever_pos = set().union(*[set(i) for i in solved.loc[solved["alpha"] > 0, "weighted_zone_ids"]])
+    ever_zero = set().union(*[set(i) for i in solved.loc[solved["alpha"] == 0, "weighted_zone_ids"]])
+    ids = [i for i in result["default_baseline_ids"] if i not in ever_pos]
+    s = zones[zones["zone_id"].isin(ids)].sort_values("RPL_THEMES", ascending=False).copy()
+    s["cut_at_alpha0"] = s["zone_id"].isin(ever_zero)
+    return s[["zone_id", "GEOID", "COUNTY", "RPL_THEMES", "share_electric_heat", "occupied_units", "L_mw", "cut_at_alpha0"]]
 
 
 def alpha_sweep(zones: pd.DataFrame, cfg: dict, kw_per_job: float, d_nc08: float, target: float) -> pd.DataFrame:
