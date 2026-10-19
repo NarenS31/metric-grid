@@ -45,15 +45,16 @@ Required reduction 91.9 MW (modeled district estimate), alpha 0.5, both plans cu
 - **Costs are 2013 dollars and one commercial rate.** The LBNL report gives costs by customer size, not by sector, and per average kW, which likely overstates a cold-morning job. The Small C&I rate is a sensitivity row.
 - **Judgment calls:** harm weights (0.7 SVI, 0.3 electric heat), a 1-hour outage, a 2% band, a 10 kW baseline tolerance, splitting counties served by both utilities by estimated customers, and using each utility's maximum shed. All are in `config.yaml` and varied in the sensitivity table.
 - **No validation against actual outage records.** Nothing here says where Duke did or would cut. The priority list is what *this model* spares across settings, not a finding about specific neighborhoods.
-- **Dependencies installed but not used yet:** scipy (for the unimplemented substation zones), pyarrow, and the node packages (fastapi, uvicorn, httpx, python-kasa).
 
 ## Run it (works offline)
 
 ```bash
-python3.11 -m venv .venv && .venv/bin/pip install -r requirements.txt   # needs network once, to install packages
+python3.11 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt   # needs network once, to install packages
 make test        # runs the tests; no network, no API keys
 make demo        # opens the app on the frozen scenario (http://localhost:8765)
 ```
+
+`requirements.txt` is exactly what the deployed app imports (pinned); `requirements-dev.txt` adds the test, figure and data-refresh tools. **In a clean clone `make test` skips 7 tests and passes the rest:** the seven data-pull checks (tract count, GEOID cleanliness, no silent NaN fills, facility types, the area-join identity check, the saved EIA series, the county table) need the raw downloads in `data/raw/`, which are gitignored; they run after `make data`. The skips say "run `make data` first".
 
 The app reads only `data/frozen/` (committed, about 1 MB). There are no live API calls at runtime and it renders with every network call blocked (a test does exactly that). `make data` (needs `EIA_API_KEY` and `CENSUS_API_KEY` in `.env`) and `make freeze` rebuild the frozen inputs from the public sources; they are only needed to refresh data. Deep links for the controls: `?alpha=1&pct=10&cap=1&zone=23`.
 
@@ -82,12 +83,20 @@ URLs, retrieval notes and every fallback are in `docs/DATA_SOURCES.md` and `docs
 
 ## Prior work
 
-- Shah et al. 2023, doi:10.1088/2634-4505/acd4e7.
-- UT Austin work on equity-informed power-system resilience (citation to be added by the author).
-- arXiv:2406.17877, arXiv:2204.06543, arXiv:2402.04444, arXiv:2407.18989, arXiv:2404.11520 (listed in the project brief; titles to be added by the author).
-- SC Office of Regulatory Staff, "Inspection and Examination Report of DEC and DEP December 2022 Winter Storm Outages and Blackouts" (read; source of shed amounts).
-- FERC-NERC-Regional Entity staff report, "Inquiry into Bulk-Power System Operations During December 2022 Winter Storm Elliott" (read; source of shed amounts and timing).
-- NCUC Docket M-100 Sub 163 is named in the project brief but was not read for this project; the shed amounts come from the two reports above.
+Titles and authors below were confirmed from the publishers' or arXiv's records. They are related work, listed so a reader can compare approaches; this project does not reproduce their methods.
+
+- Zeal Shah, Juan Pablo Carvallo, Feng-Chi Hsu, Jay Taneja, "The inequitable distribution of power interruptions during the 2021 Texas winter storm Uri," *Environmental Research: Infrastructure and Sustainability* 3 (2023), doi:10.1088/2634-4505/acd4e7.
+- Gizem Toplu-Tutay, John J. Hasenbein, Erhan Kutanoglu, "Impact of power outages depends on who loses it: Equity-informed grid resilience planning via stochastic optimization," *Socio-Economic Planning Sciences* 95 (2024), doi:10.1016/j.seps.2024.102036 (University of Texas at Austin).
+- Xin Fang, Wenbo Wang, Fei Ding, "Equity-aware Load Shedding Optimization," arXiv:2406.17877 (2024).
+- Alyssa Kody, Amanda West, Daniel K. Molzahn, "Sharing the Load: Considering Fairness in De-energization Scheduling to Mitigate Wildfire Ignition Risk using Rolling Optimization," arXiv:2204.06543 (2022).
+- Yuqi Zhou, Ahmed Zamzam, Andrey Bernstein, "Equitable Networked Microgrid Topology Reconfiguration for Wildfire Risk Mitigation," arXiv:2402.04444 (2024).
+- Yuqi Zhou, Joseph Severino, Sanjana Vijayshankar, Juliette Ugirumurera, Jibo Sanyal, "Machine Learning for Fairness-Aware Load Shedding: A Real-Time Solution via Identifying Binding Constraints," arXiv:2407.18989 (2024).
+- Madeleine Pollack, Ryan Piansky, Swati Gupta, Daniel Molzahn, "Equitably allocating wildfire resilience investments for power grids: The curse of aggregation and vulnerability indices," arXiv:2404.11520 (2024).
+
+Sources of the facts used (read in full for the passages cited):
+
+- SC Office of Regulatory Staff, "Inspection and Examination Report of DEC and DEP December 2022 Winter Storm Outages and Blackouts."
+- FERC-NERC-Regional Entity staff report, "Inquiry into Bulk-Power System Operations During December 2022 Winter Storm Elliott" (November 2023).
 
 ## AI disclosure
 
@@ -95,7 +104,9 @@ Claude and Claude Code (Anthropic) scaffolded and wrote most of this repository,
 
 ## Open-source software used
 
-Streamlit (the app), GeoPandas and shapely (geometry), pandas and NumPy (tables), PuLP with the CBC solver (optimization), pydeck (maps), matplotlib (static figures), PyYAML (config), requests (data downloads), pytest (tests), Playwright (screenshots, dev only).
+Runtime (`requirements.txt`): Streamlit (the app), GeoPandas and shapely (geometry), pandas and NumPy (tables), PuLP with the CBC solver (optimization), pydeck (maps), PyYAML (config). Development (`requirements-dev.txt`): pytest (tests), matplotlib (static figures), requests (data downloads), Playwright (screenshots).
+
+Optional hardware prototype (ESP32 outage + indoor temperature logger) is in progress and not part of this submission.
 
 ## Version 2.0 ideas
 

@@ -25,10 +25,10 @@ Every map draws the NC-08 district outline (data/frozen/district.geojson). Amend
 Run the app with `make app` (port 8765); screenshots with `scripts/app_screenshots.py` (needs requirements-dev.txt). If the app looks stale after a code change, kill whatever holds port 8765 first.
 
 ## Stack
-Python 3.11+, Streamlit, GeoPandas, shapely, scipy, PuLP (CBC), pandas, pyarrow, pydeck, pytest, requests, pyyaml. Node (later): FastAPI + SQLite, httpx, python-kasa, ESP32 Feather V2 firmware. Make targets: data, freeze, test, app, demo, api. Ask before adding anything else.
+Python 3.11, Streamlit, GeoPandas, shapely, PuLP (CBC), pandas, numpy, pydeck, PyYAML (runtime); pytest, matplotlib, requests, Playwright (dev). requirements.txt = exactly the app's runtime imports, pinned; requirements-dev.txt = tests, figures, data refresh; requirements-node.txt = unused node packages. Make targets: data, freeze, test, app, demo, api. Ask before adding anything else.
 
 ## Layout
-`config.yaml` (every constant, source-commented; state/district/BA/counties only here), `data/raw` (gitignored), `data/frozen` (committed, only runtime inputs), `src/metric_grid/{config.py, ingest/, geometry/, model/, app/, nodes/}`, `tests/`, `docs/`, `firmware/`. Node code (server/, tools/, firmware/hw_test, real metric_node) is the author's own, arriving later: do not rewrite or move it; spec Phase 5 is superseded by it. firmware/bus_check*, i2c_scan are throwaway hardware tests: leave alone.
+`config.yaml` (every constant, source-commented; state/district/BA/counties only here), `data/raw` (gitignored), `data/frozen` (committed, only runtime inputs), `src/metric_grid/{config.py, ingest/, geometry/, model/, app/, nodes/}`, `tests/`, `docs/`, `firmware/`. The optional hardware node is out of this submission (the firmware folder was deleted 2026-10-19; node packages are in requirements-node.txt and nothing imports them). Do not recreate placeholder files for it.
 
 ## Working style
 One phase at a time; STOP for review at each phase and report verified / failed / needs decision. Update CHANGELOG.md and docs/AI_DISCLOSURE.md every step (same commit). Small functions with docstrings. Cap dead-data-source workarounds at ~20 min, then fall back and document. Don't overwrite existing files without looking first.

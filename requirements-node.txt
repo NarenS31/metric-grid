@@ -1,0 +1,6 @@
+# Optional hardware prototype (ESP32 outage + indoor temperature logger): in progress and NOT part of this submission.
+# Nothing in this repository imports these packages yet.
+fastapi==0.146.0
+uvicorn==0.54.0
+httpx==0.28.1
+python-kasa==0.11.0.1

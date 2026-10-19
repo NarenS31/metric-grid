@@ -219,10 +219,11 @@ with c2, st.container(border=True):
         st.caption("Select a zone to see its inputs and the harm formula with its numbers substituted.")
 
 with c2, st.container(border=True):
-    st.markdown("<div class='serif' style='font-size:1.2rem;font-weight:700'>Demo locations</div>", unsafe_allow_html=True)
-    st.markdown("<p class='scaling'>Three fixed public buildings (no home addresses, no live geocoder). Status is for the census "
-                "tract zone the building sits in, under the current controls.</p>", unsafe_allow_html=True)
-    lrows = lookup.lookup_rows(zones, cfg["demo_locations"], r)
+    st.markdown("<div class='serif' style='font-size:1.2rem;font-weight:700'>Example locations</div>", unsafe_allow_html=True)
+    st.markdown("<p class='scaling'>Three example public buildings (no home addresses, no live geocoder), chosen to illustrate "
+                "differences between the plans. Status is for the census tract zone the building sits in, under the current "
+                "controls.</p>", unsafe_allow_html=True)
+    lrows = lookup.lookup_rows(zones, cfg["example_locations"], r)
     st.markdown("<table class='t'><tr><th>Location</th><th>Zone</th><th>Baseline</th><th>Vulnerability-aware</th></tr>" + "".join(
         f"<tr><td>{x['label']}</td><td>{x['zone_id']}</td><td>{x['baseline']}</td><td>{x['weighted']}</td></tr>" for x in lrows)
         + "</table>", unsafe_allow_html=True)

@@ -1,3 +1,21 @@
+## Spec amendments
+
+The brief below is kept as written. These are the places where the build differs from it, with the date and the one-line reason. Details and numbers are in `docs/ASSUMPTIONS.md`.
+
+| Date | Change | Why |
+|---|---|---|
+| 2026-10-18 | Two utilities, not one: district load is scaled from Duke Energy Carolinas (EIA-930 DUK) and Duke Energy Progress (CPLE + CPLW), each with its own reduction ratio | Both utilities shed load on Dec 24, 2022 and serve NC-08 counties; one balancing authority would scale DEP territory with the wrong demand |
+| 2026-10-18 | Shed amounts (1,000 MW and 961 MW) come from the SC Office of Regulatory Staff report and the FERC-NERC Elliott report, not the NCUC docket | The two reports state the figures and were read; the docket was not |
+| 2026-10-18 | Shared target band (T to T plus 2%, widened to at most 5%) replaces "Stage B holds exactly T*" | Exact equality is feasible but took about 34 s to solve against about 0.5 s for the band; load is also shed in blocks |
+| 2026-10-18 | Zones are census tracts (`zone_mode: tract`); no substation zones | The HIFLD Open substation layer was not reachable; the copies found cover transmission-level (69 kV and up) substations only |
+| 2026-10-18 | Hard exclusions are hospitals, nursing homes and water treatment only; fire, police and wastewater are display-only | Including fire and police would protect 42.6% of housing units, too much room taken from the optimizer |
+| 2026-10-18 | Optional county-share cap (default off) added as a toggle and a sensitivity row | The harm-weighted plan put 88% of its cut in one county |
+| 2026-10-18 | The demo grid is pre-solved at `make freeze`, not at app start | The 10-20% presets take 2-3 s each, and the first capped solve exceeded the 2 s limit |
+| 2026-10-19 | The reduction slider has four stops only: Elliott (default), 10%, 15%, 20% | Every stop is pre-solved and instant; off-grid stops fell back to a nearest result |
+| 2026-10-19 | The optional node (spec Phase 5) and its firmware folder are out of this submission | The hardware prototype is still in progress |
+
+---
+
 You are building **METRIC-Grid**. One-sentence purpose: METRIC-Grid helps emergency planners and community stakeholders compare how load-only and vulnerability-aware outage scenarios could distribute risk across North Carolina's 8th Congressional District (NC-08).
 
 **Primary user:** a county emergency planner who wants to know whether two technically equal outage scenarios could impose very different consequences on vulnerable communities, and leaves with a short list of zones to prioritize for outreach, warming centers, and backup power. Secondary: state utility-policy staff, consumer advocates, community organizations, local officials, journalists, students. Not utility operators (needs private feeder data) and not residents (no household prediction). It is a Congressional App Challenge submission due 12:00 pm EDT, October 26, 2026. I am a high-school student with FRC programming experience. Build it as a real, runnable, offline-capable project with tests. Less scope, more proof.

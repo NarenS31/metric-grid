@@ -142,14 +142,17 @@ nrel:
   cold_week_days: 7
   reference_hour_local: 7     # hour starting 07:00 local standard time (EULP timestamps are period-ending, EST)
 
-# Fixed demo locations (no live geocoder). Public buildings only, never home addresses. Coordinates: US Census Geocoder
-# (benchmark Public_AR_Current, https://geocoding.geo.census.gov/), looked up once on 2026-10-19 for the street address.
-# That the address is the named building is from public knowledge: the author should verify each before submission.
-# Each point falls inside an NC-08 zone (checked); the app reports the zone (a census tract) the building sits in.
-demo_locations:
-  - {label: "Union County Government Center, Monroe", county: "Union", address: "500 N Main St, Monroe, NC 28112", lat: 34.983617, lon: -80.550330}
-  - {label: "Robeson County Public Library, Lumberton", county: "Robeson", address: "101 N Chestnut St, Lumberton, NC 28358", lat: 34.617204, lon: -79.007862}
-  - {label: "Harrisburg Town Hall, Harrisburg", county: "Cabarrus", address: "4100 Main St, Harrisburg, NC 28075", lat: 35.325660, lon: -80.644836}
+# Fixed example locations (no live geocoder). Public buildings only, never home addresses. They were CHOSEN TO ILLUSTRATE
+# DIFFERENCES between the plans (see docs/ASSUMPTIONS.md): one in zone 23 (the baseline cuts it, the vulnerability-aware plan
+# spares it), one in zone 141 in Union County (the vulnerability-aware plan cuts it, the baseline does not), and the Robeson
+# library (kept on under both). Each point falls inside an NC-08 zone (checked in tests). Sources are per location.
+example_locations:
+  - {label: "Wolf Meadow Elementary School (Cabarrus County)", county: "Cabarrus", address: "150 Wolf Meadow Dr SW", lat: 35.376044, lon: -80.627279,
+     source: "OpenStreetMap way/1459330067 (name, address, centroid), pulled via Overpass 2026-10-19"}
+  - {label: "Hemby Bridge Elementary School, Indian Trail (Union County)", county: "Union", address: "6701 Indian Trail Fairview Rd, Indian Trail", lat: 35.107220, lon: -80.618625,
+     source: "OpenStreetMap way/862806256 (name, address, centroid), pulled via Overpass 2026-10-19"}
+  - {label: "Robeson County Public Library, Lumberton", county: "Robeson", address: "101 N Chestnut St, Lumberton, NC 28358", lat: 34.617204, lon: -79.007862,
+     source: "US Census Geocoder (Public_AR_Current) for the street address, 2026-10-19; that the address is the library is from public knowledge, author to verify"}
 
 nodes:
   enabled: false              # Phase 5 only; hides node panel when false

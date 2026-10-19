@@ -147,7 +147,7 @@ def test_get_view_prefers_presolved_and_falls_back_with_a_note(monkeypatch):
     A = data.load_all()
     v = data.get_view(0.5, data.pct_options(A["consts"], A["cfg"])[0], False)
     assert v["source"] == "pre-solved" and v["note"] is None
-    pct = 12.5  # not a preset: needs a live solve
+    pct = 12.5  # off the slider (the app never offers it): exercises the safety-net path directly
 
     monkeypatch.setattr(data, "_live_solve", lambda a, t, c: {"error": "ValueError: boom"})
     v = data.get_view(0.5, pct, False)
@@ -188,17 +188,28 @@ def test_zone_detail_empty_state_when_no_zone_selected():
     assert not at.exception and "Select a zone to see its inputs and the harm formula" in page_text(at)
 
 
-def test_demo_locations_each_inside_a_zone_of_the_right_county():
+def test_example_locations_each_inside_a_zone_of_the_right_county():
     from metric_grid.app import lookup
     from metric_grid.config import load_config
     z = frozen.load_zones()
-    locs = load_config()["demo_locations"]
+    locs = load_config()["example_locations"]
     assert len(locs) == 3 and {l["county"] for l in locs} == {"Union", "Robeson", "Cabarrus"}
     for loc in locs:
         zid = lookup.locate(z, loc["lat"], loc["lon"])
         assert zid is not None
         assert z.loc[z["zone_id"] == zid, "COUNTY"].iloc[0] == f"{loc['county']} County"
-        assert "home" not in loc["label"].lower() and "residence" not in loc["label"].lower()
+        assert "home" not in loc["label"].lower() and "residence" not in loc["label"].lower() and loc["source"]
+
+
+def test_example_locations_illustrate_a_difference_between_the_plans(default_page):
+    from metric_grid.app import lookup
+    from metric_grid.config import load_config
+    rec = [r for r in frozen.load_presolved() if r["target_key"] == "elliott" and r["alpha"] == 0.5 and not r["cap"]][0]
+    rows = {r["zone_id"]: r for r in lookup.lookup_rows(frozen.load_zones(), load_config()["example_locations"], scenarios.record_to_pair(rec))}
+    assert (rows[23]["baseline"], rows[23]["weighted"]) == ("CUT", "kept on")  # spared by the vulnerability-aware plan
+    assert (rows[141]["baseline"], rows[141]["weighted"]) == ("kept on", "CUT")  # cut instead
+    assert (rows[100]["baseline"], rows[100]["weighted"]) == ("kept on", "kept on")  # the Robeson library
+    assert "Example locations" in page_text(default_page) and "Demo locations" not in page_text(default_page)
 
 
 def test_locate_and_status_edge_cases():
@@ -212,13 +223,13 @@ def test_locate_and_status_edge_cases():
     assert lookup.status(z, cut, pair.weighted) == "CUT"
 
 
-def test_demo_location_table_shows_status_under_both_plans(default_page):
+def test_example_location_table_shows_status_under_both_plans(default_page):
     from metric_grid.app import lookup
     from metric_grid.config import load_config
     text = page_text(default_page)
     rec = [r for r in frozen.load_presolved() if r["target_key"] == "elliott" and r["alpha"] == 0.5 and not r["cap"]][0]
     pair = scenarios.record_to_pair(rec)
-    for row in lookup.lookup_rows(frozen.load_zones(), load_config()["demo_locations"], pair):
+    for row in lookup.lookup_rows(frozen.load_zones(), load_config()["example_locations"], pair):
         assert f"<td>{row['label']}</td><td>{row['zone_id']}</td><td>{row['baseline']}</td><td>{row['weighted']}</td>" in text
 
 
@@ -231,6 +242,8 @@ def test_tooltips_for_svi_ice_census_tract_zone_and_target_band(default_page):
 
 def test_infeasible_target_shows_explanation_and_nearest_result(monkeypatch):
     from metric_grid.app import data
+    real = data.pct_options
+    monkeypatch.setattr(data, "pct_options", lambda c, g: real(c, g) + [12.5])  # a stop that is not pre-solved
     monkeypatch.setattr(data, "_live_solve", lambda a, t, c: {"infeasible": "Requested 999.0 MW exceeds the unprotected load.",
                                                                "max_feasible_mw": 1407.5})
     at = AppTest.from_file(APP, default_timeout=120)
@@ -240,6 +253,23 @@ def test_infeasible_target_shows_explanation_and_nearest_result(monkeypatch):
     text = page_text(at)
     assert "This target cannot be met" in text and "maximum feasible reduction 1407.5 MW" in text
     assert "class='note warn'" in text and "Showing the nearest pre-computed setting" in text
+
+
+def test_slider_has_only_the_four_presolved_stops():
+    from metric_grid.app import data
+    from metric_grid.config import load_config
+    consts = frozen.load_constants()
+    opts = data.pct_options(consts, load_config())
+    assert len(opts) == 4 and opts[1:] == [10, 15, 20]
+    assert abs(opts[0] - 100 * consts["T_NC08_mw"] / consts["D_NC08_mw"]) < 1e-12
+    for p in opts:  # every stop is pre-solved for every alpha, cap on and off: normal use never solves live
+        key, _ = data.target_for(p, consts)
+        for cap in (False, True):
+            assert {r["alpha"] for r in frozen.load_presolved() if r["target_key"] == key and r["cap"] == cap and r["solved"]} == {0, 0.25, 0.5, 0.75, 1}
+    at = AppTest.from_file(APP, default_timeout=120)
+    at.query_params["pct"] = "12.5"  # off-grid deep link snaps to a stop
+    at.run()
+    assert not at.exception and at.session_state["pct"] in opts and "Showing nearest" not in page_text(at)
 
 
 def test_missing_frozen_data_state_explains_what_to_do(monkeypatch, tmp_path):

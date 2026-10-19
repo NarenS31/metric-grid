@@ -135,3 +135,73 @@ def test_reviews_template_has_three_reviewer_types_and_no_endorsement_claim():
     for kind in ("non-expert", "programmer", "policy or energy"):
         assert kind in r
     assert "Never claim endorsement" in r and "endorse" not in r.replace("Never claim endorsement", "").lower().replace("endorsement.", "")
+
+
+# ---------------- housekeeping decisions (2026-10-19) ----------------
+
+def _runtime_third_party_imports() -> set[str]:
+    out = set()
+    files = list((ROOT / "src/metric_grid/app").glob("*.py")) + list((ROOT / "src/metric_grid/model").glob("*.py")) + [
+        ROOT / "src/metric_grid/frozen.py", ROOT / "src/metric_grid/config.py"]
+    for f in files:
+        for n in ast.walk(ast.parse(f.read_text())):
+            mods = [a.name.split(".")[0] for a in n.names] if isinstance(n, ast.Import) else (
+                [n.module.split(".")[0]] if isinstance(n, ast.ImportFrom) and n.module and n.level == 0 else [])
+            out |= {m for m in mods if m not in sys.stdlib_module_names and m != "metric_grid"}
+    return out
+
+
+def _requirement_names(path: str) -> list[str]:
+    lines = [l.split("#")[0].strip() for l in (ROOT / path).read_text().splitlines()]
+    return [l for l in lines if l and not l.startswith("-r")]
+
+
+def test_requirements_txt_is_exactly_the_runtime_imports_and_pinned():
+    reqs = _requirement_names("requirements.txt")
+    assert all(re.fullmatch(r"[A-Za-z0-9_.\-]+==[0-9][A-Za-z0-9_.]*", r) for r in reqs), reqs
+    names = {r.split("==")[0].lower().replace("pyyaml", "yaml") for r in reqs}
+    assert names == _runtime_third_party_imports()
+    for unused in ("scipy", "pyarrow", "fastapi", "uvicorn", "httpx", "python-kasa", "pytest", "matplotlib", "requests", "playwright"):
+        assert unused not in names
+
+
+def test_dev_and_node_requirements_split():
+    dev = {r.split("==")[0] for r in _requirement_names("requirements-dev.txt")}
+    node = {r.split("==")[0] for r in _requirement_names("requirements-node.txt")}
+    assert {"pytest", "matplotlib", "requests", "playwright"} <= dev
+    assert node == {"fastapi", "uvicorn", "httpx", "python-kasa"} and "scipy" not in dev and "pyarrow" not in dev
+    assert all("==" in r for r in _requirement_names("requirements-dev.txt") + _requirement_names("requirements-node.txt"))
+
+
+def test_firmware_folder_removed_and_readme_notes_the_prototype():
+    assert not (ROOT / "firmware").exists() and not any(f.startswith("firmware/") for f in tracked())
+    readme = (ROOT / "README.md").read_text()
+    assert "Optional hardware prototype (ESP32 outage + indoor temperature logger) is in progress and not part of this submission." in readme
+
+
+def test_readme_notes_the_seven_clean_clone_skips():
+    readme = (ROOT / "README.md").read_text()
+    assert "skips 7" in readme and "run `make data` first" in readme
+
+
+def test_no_ncuc_citation_and_prior_work_entries_are_verified_ones():
+    readme = (ROOT / "README.md").read_text()
+    assert "NCUC" not in readme and "M-100" not in readme
+    for title in ("The inequitable distribution of power interruptions during the 2021 Texas winter storm Uri",
+                  "Impact of power outages depends on who loses it: Equity-informed grid resilience planning via stochastic optimization",
+                  "Equity-aware Load Shedding Optimization", "Sharing the Load: Considering Fairness in De-energization Scheduling",
+                  "Equitable Networked Microgrid Topology Reconfiguration for Wildfire Risk Mitigation",
+                  "Machine Learning for Fairness-Aware Load Shedding", "Equitably allocating wildfire resilience investments for power grids"):
+        assert title in readme, title
+    for ref in ("10.1088/2634-4505/acd4e7", "10.1016/j.seps.2024.102036", "2406.17877", "2204.06543", "2402.04444", "2407.18989", "2404.11520"):
+        assert ref in readme, ref
+
+
+def test_spec_has_amendments_table_with_every_required_change():
+    spec = (ROOT / "docs" / "SPEC.md").read_text()
+    head = spec.split("You are building")[0]
+    assert head.startswith("## Spec amendments")
+    for needle in ("Two utilities", "Shared target band", "census tracts", "county-share cap", "hospitals, nursing homes and water treatment",
+                   "pre-solved at `make freeze`", "four stops only"):
+        assert needle in head, needle
+    assert len(re.findall(r"\| 2026-10-\d\d \|", head)) >= 6  # each row dated

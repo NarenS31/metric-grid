@@ -24,11 +24,10 @@ def load_all() -> dict:
 
 
 def pct_options(consts: dict, cfg: dict) -> list[float]:
-    """Slider choices: the Elliott-anchored target first, then the presets and midpoints."""
+    """Slider stops: the Elliott-anchored target first (the default), then the configured presets. No off-grid stops, so every
+    stop is pre-solved and instant."""
     elliott = 100 * consts["T_NC08_mw"] / consts["D_NC08_mw"]
-    presets = cfg["optimizer"]["target_pcts"]
-    mids = [(a + b) / 2 for a, b in zip(presets, presets[1:])]
-    return [elliott] + sorted(presets + mids)
+    return [elliott] + sorted(cfg["optimizer"]["target_pcts"])
 
 
 def target_for(pct: float, consts: dict) -> tuple[str, float]:

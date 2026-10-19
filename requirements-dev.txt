@@ -1,1 +1,10 @@
-playwright
+# Development, tests and data refresh (installs the runtime requirements too).
+-r requirements.txt
+pytest==9.1.1          # make test
+matplotlib==3.11.2     # make freeze and src/metric_grid/figures.py (static figures)
+requests==2.34.2       # make data (public data downloads)
+playwright==1.64.0     # scripts/app_screenshots.py (screenshots and page checks)
+
+# Not installed: declared in the original brief but not used by any code yet.
+# scipy        # only for the unimplemented substation-zone (Voronoi) mode
+# pyarrow      # no parquet files are written or read

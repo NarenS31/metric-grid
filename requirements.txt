@@ -1,17 +1,9 @@
-streamlit
-geopandas
-shapely
-scipy
-pulp
-pandas
-pyarrow
-pydeck
-matplotlib
-requests
-pyyaml
-pytest
-# Optional node (later):
-fastapi
-uvicorn
-httpx
-python-kasa
+# Exactly what the deployed app imports at runtime (Python 3.11). Pinned to the versions the tests were run with.
+streamlit==1.66.0
+geopandas==1.2.0
+shapely==2.2.0
+pandas==3.0.6
+numpy==2.4.6
+pydeck==0.9.3
+pulp==3.3.2
+PyYAML==6.0.3
