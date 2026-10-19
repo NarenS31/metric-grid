@@ -51,7 +51,7 @@ def main() -> int:
             if name == "app_default":  # the demand panel, cropped from the full-height page
                 box = page.get_by_text("Why forecasts aren't enough").first.bounding_box()
                 page.screenshot(path=str(out / "app_demand_panel.png"),
-                                clip={"x": 60, "y": box["y"] - 28, "width": 1320, "height": 560})
+                                clip={"x": 60, "y": box["y"] - 28, "width": 1320, "height": 640})
             report[name] = {"scrollWidth/clientWidth": sw, "external_hosts": sorted(external), "console_errors": console_errors[:3],
                             "banned_words": hits, "has_required_sentence": REQUIRED_SENTENCE in re.sub(r"\s+", " ", text_all),
                             "canvases": page.locator("canvas").count()}
