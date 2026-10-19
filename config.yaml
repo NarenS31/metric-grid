@@ -12,7 +12,7 @@ district:
   counties: ["007", "025", "119", "123", "153", "155", "165", "167", "179"]
 
 # Footprint groups: one per utility whose balancing-authority demand is scaled down to the district.
-# D_NC08 = sum over groups of D_g(07:00) * W_NC08_in_g / W_g, with a consistent modeled weight W.
+# D_NC08 = sum over groups of D_g (the hour ending 07:00) * W_NC08_in_g / W_g, with a consistent modeled weight W.
 # Counties are assigned to groups from EIA Form 861 (Service_Territory + the BA Code in Sales_Ult_Cust); see
 # docs/ASSUMPTIONS.md. Nothing here is specific to NC-08: another district only needs another list.
 balancing_authorities:
@@ -37,14 +37,14 @@ balancing_authorities:
 shared_county_rule: "customer_spread"
 
 scenario:
-  name: "Winter Storm Elliott, Dec 24 2022, 07:00"
+  name: "Winter Storm Elliott, Dec 24 2022, hour ending 07:00 (06:00-07:00)"
   date: "2022-12-24"
   eia_window_start_utc: "2022-12-22T00:00"   # EIA-930 fetch range per spec (2022-12-22 to 2022-12-26)
   eia_window_end_utc: "2022-12-26T23:00"
   local_tz: "America/New_York"
   shed_start_local: "06:14"   # SC ORS report p.39: DEC load shed directed 6:14 AM (DEP: 6:25 AM)
-  reference_hour_local: "07:00"
-  # Per-group r_g = shed_mw / D_g(07:00), computed from balancing_authorities above, never typed in.
+  reference_hour_local: "07:00"   # the EIA label: EIA labels each hour by its END, so this is the hour 06:00-07:00 local
+  # Per-group r_g = shed_mw / D_g (the hour ending 07:00), computed from balancing_authorities above, never typed in.
   # Regional MW are never used as NC-08 MW.
 
 eia:
@@ -140,20 +140,18 @@ nrel:
   # (weather/amy2018/G3701190_2018.csv): 7-day mean 2018-01-01..07 = -4.8 C, min -11.7 C (Jan 2). Elliott morning was ~10 F (-12 C).
   cold_week_start: "2018-01-01"
   cold_week_days: 7
-  reference_hour_local: 7     # hour starting 07:00 local standard time (EULP timestamps are period-ending, EST)
+  reference_hour_local: 6     # the hour STARTING 06:00 local standard time = the hour ENDING 07:00, matching the EIA label (EULP timestamps are period-ending, EST)
 
 # Fixed example locations (no live geocoder). Public buildings only, never home addresses. They were CHOSEN TO ILLUSTRATE
-# DIFFERENCES between the plans (see docs/ASSUMPTIONS.md): one in zone 23 (the baseline cuts it, the vulnerability-aware plan
-# spares it), one in zone 141 in Union County (the vulnerability-aware plan cuts it, the baseline does not), and the Robeson
-# library (kept on under both). Each point falls inside an NC-08 zone (checked in tests). Sources are per location.
+# DIFFERENCES between the plans (see docs/ASSUMPTIONS.md): one in zone 10 (the load-only baseline cuts it, the vulnerability-aware
+# plan spares it), one in zone 141 in Union County (the vulnerability-aware plan cuts it, the baseline does not), and the Robeson
+# library (kept on under both). The baseline's exact zones are one of many equivalent plans (see "Baseline plan instability" in
+# ASSUMPTIONS.md), so the zone-10 illustration is specific to the plan the optimizer returns. Each point falls inside an NC-08
+# zone (checked in tests). Sources are per location.
 example_locations:
-  - {label: "Wolf Meadow Elementary School (Cabarrus County)", county: "Cabarrus", address: "150 Wolf Meadow Dr SW", lat: 35.376044, lon: -80.627279,
-     source: "OpenStreetMap way/1459330067 (name, address, centroid), pulled via Overpass 2026-10-19"}
+  - {label: "Central Cabarrus High School, Concord (Cabarrus County)", county: "Cabarrus", address: "505 Highway 49 S, Concord", lat: 35.362435, lon: -80.582429,
+     source: "OpenStreetMap way/385194444 (name, address, centroid), pulled via Overpass 2026-10-19"}
   - {label: "Hemby Bridge Elementary School, Indian Trail (Union County)", county: "Union", address: "6701 Indian Trail Fairview Rd, Indian Trail", lat: 35.107220, lon: -80.618625,
      source: "OpenStreetMap way/862806256 (name, address, centroid), pulled via Overpass 2026-10-19"}
   - {label: "Robeson County Public Library, Lumberton", county: "Robeson", address: "101 N Chestnut St, Lumberton, NC 28358", lat: 34.617204, lon: -79.007862,
      source: "US Census Geocoder (Public_AR_Current) for the street address, 2026-10-19; that the address is the library is from public knowledge, author to verify"}
-
-nodes:
-  enabled: false              # Phase 5 only; hides node panel when false
-  aggregates_path: "data/node_aggregates.parquet"

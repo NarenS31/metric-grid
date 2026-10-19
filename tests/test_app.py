@@ -176,7 +176,6 @@ def test_nearest_prefers_same_cap_setting():
 
 def test_zone_detail_opens_on_top_priority_zone_by_default(default_page):
     top = frozen.load_sensitivity()["priority_list"][0]["zone_id"]
-    assert top == 8
     text = page_text(default_page)
     assert f"**Zone {top}**" in text and "H_human = N x (0.7 x SVI + 0.3 x heat)" in text
 
@@ -206,7 +205,7 @@ def test_example_locations_illustrate_a_difference_between_the_plans(default_pag
     from metric_grid.config import load_config
     rec = [r for r in frozen.load_presolved() if r["target_key"] == "elliott" and r["alpha"] == 0.5 and not r["cap"]][0]
     rows = {r["zone_id"]: r for r in lookup.lookup_rows(frozen.load_zones(), load_config()["example_locations"], scenarios.record_to_pair(rec))}
-    assert (rows[23]["baseline"], rows[23]["weighted"]) == ("CUT", "kept on")  # spared by the vulnerability-aware plan
+    assert (rows[10]["baseline"], rows[10]["weighted"]) == ("CUT", "kept on")  # spared by the vulnerability-aware plan
     assert (rows[141]["baseline"], rows[141]["weighted"]) == ("kept on", "CUT")  # cut instead
     assert (rows[100]["baseline"], rows[100]["weighted"]) == ("kept on", "kept on")  # the Robeson library
     assert "Example locations" in page_text(default_page) and "Demo locations" not in page_text(default_page)

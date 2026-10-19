@@ -7,7 +7,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # src/, so `stream
 import pandas as pd
 import streamlit as st
 
-from metric_grid.app import copy, data, lookup, maps, provenance, theme
+from metric_grid.app import copy, data, demand_panel, lookup, maps, provenance, theme
 from metric_grid.config import ROOT
 from metric_grid.model import harm
 from metric_grid.model.optimizer import PlanResult
@@ -252,13 +252,27 @@ with c3, st.container(border=True):
             "human_change_pct": "human harm %", "econ_change_pct": "cost % (2013$)", "households_change": "households cut +/-"})
         st.dataframe(show.round(1), hide_index=True, width="stretch")
 
+# ---------------------------------------------------------------- 7b. demand panel (hidden if its frozen file is missing)
+panel = A["panel"]
+if panel:
+    with st.container(border=True):
+        st.markdown("<div class='serif' style='font-size:1.2rem;font-weight:700'>Why forecasts aren't enough</div>", unsafe_allow_html=True)
+        st.markdown(f"<p class='scaling'>{panel['label']}</p>", unsafe_allow_html=True)
+        pc1, pc2 = st.columns([1.7, 1], gap="large")
+        with pc1:
+            st.vega_lite_chart(demand_panel.chart_spec(panel), width="stretch")
+        with pc2:
+            st.markdown(f"<p class='honest'>{demand_panel.sentence(panel, demand_panel.total_shed_mw(consts))}</p>", unsafe_allow_html=True)
+            st.markdown(demand_panel.temperature_table(panel), unsafe_allow_html=True)
+            st.markdown(f"<p class='scaling'>{demand_panel.coldest_note(panel)}</p>", unsafe_allow_html=True)
+
 # ---------------------------------------------------------------- 8. methods & sources drawer
 with st.expander("Methods & sources"):
     g = consts["groups"]
     st.markdown("**This is not Duke's method, not an operational switching tool, and the zones are census tracts, not utility "
                 "boundaries.** Everything here is a planning scenario built from public data.")
     st.markdown(f"**District scaling.** {provenance.DISTRICT_SENTENCE} Load is scaled from two utilities' balancing-authority demand "
-                f"(Duke Energy Carolinas {g['DEC']['D_group_mw']:,.0f} MW and Duke Energy Progress {g['DEP']['D_group_mw']:,.0f} MW at 07:00) "
+                f"(Duke Energy Carolinas {g['DEC']['D_group_mw']:,.0f} MW and Duke Energy Progress {g['DEP']['D_group_mw']:,.0f} MW in the hour ending 07:00, that is 06:00 to 07:00) "
                 f"using a modeled weight (housing units and jobs): D_NC08 = sum of D_utility x W_NC08-in-utility / W_utility = "
                 f"{consts['D_NC08_mw']:,.0f} MW; required reduction T_NC08 = {consts['T_NC08_mw']:.1f} MW.")
     st.markdown(f"**Reduction ratio r.** {consts['r_definition']}. r (Carolinas) = {g['DEC']['r']:.4f}, r (Progress) = {g['DEP']['r']:.4f}.")

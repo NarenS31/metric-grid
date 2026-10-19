@@ -1,0 +1,778 @@
+{
+ "label": "modeled demand estimate; not a utility forecast; does not predict outages or available supply",
+ "model": "boosted",
+ "n_winters": 8,
+ "n_train_hours": 16584,
+ "typical_mape_pct": 3.6850213387982564,
+ "typical_mape_basis": "leave-one-winter-out cross-validation, DUK+CPLE, training pool only",
+ "holdout_mape_pct": 3.8511836516077897,
+ "elliott": {
+  "local_end": "2022-12-24T07:00:00",
+  "hour_label": "hour ending 07:00 (06:00-07:00) local",
+  "actual_mw": 33590.0,
+  "predicted_mw": 29368.96085703188,
+  "gap_mw": -4221.0391429681185,
+  "gap_pct": -12.566356483977728,
+  "temp_f": 10.0
+ },
+ "series": [
+  {
+   "local_end": "2022-12-22T01:00:00",
+   "actual_mw": 19581.0,
+   "predicted_mw": 19287.135461523514,
+   "temp_f": 38.0
+  },
+  {
+   "local_end": "2022-12-22T02:00:00",
+   "actual_mw": 19193.0,
+   "predicted_mw": 19022.25388061889,
+   "temp_f": 38.0
+  },
+  {
+   "local_end": "2022-12-22T03:00:00",
+   "actual_mw": 19016.0,
+   "predicted_mw": 18795.517679181714,
+   "temp_f": 38.0
+  },
+  {
+   "local_end": "2022-12-22T04:00:00",
+   "actual_mw": 19052.0,
+   "predicted_mw": 19020.55343379597,
+   "temp_f": 37.0
+  },
+  {
+   "local_end": "2022-12-22T05:00:00",
+   "actual_mw": 19412.0,
+   "predicted_mw": 19260.150677453596,
+   "temp_f": 37.0
+  },
+  {
+   "local_end": "2022-12-22T06:00:00",
+   "actual_mw": 20232.0,
+   "predicted_mw": 20616.38242891281,
+   "temp_f": 37.0
+  },
+  {
+   "local_end": "2022-12-22T07:00:00",
+   "actual_mw": 21443.0,
+   "predicted_mw": 21865.75670887145,
+   "temp_f": 38.0
+  },
+  {
+   "local_end": "2022-12-22T08:00:00",
+   "actual_mw": 22396.0,
+   "predicted_mw": 22583.965791386036,
+   "temp_f": 37.0
+  },
+  {
+   "local_end": "2022-12-22T09:00:00",
+   "actual_mw": 22783.0,
+   "predicted_mw": 22569.566365118837,
+   "temp_f": 38.0
+  },
+  {
+   "local_end": "2022-12-22T10:00:00",
+   "actual_mw": 22996.0,
+   "predicted_mw": 22128.993235000373,
+   "temp_f": 39.0
+  },
+  {
+   "local_end": "2022-12-22T11:00:00",
+   "actual_mw": 22902.0,
+   "predicted_mw": 21738.529982820295,
+   "temp_f": 39.0
+  },
+  {
+   "local_end": "2022-12-22T12:00:00",
+   "actual_mw": 22502.0,
+   "predicted_mw": 21270.64254802966,
+   "temp_f": 41.0
+  },
+  {
+   "local_end": "2022-12-22T13:00:00",
+   "actual_mw": 21951.0,
+   "predicted_mw": 20445.414286484305,
+   "temp_f": 43.0
+  },
+  {
+   "local_end": "2022-12-22T14:00:00",
+   "actual_mw": 21358.0,
+   "predicted_mw": 20556.382055063827,
+   "temp_f": 44.0
+  },
+  {
+   "local_end": "2022-12-22T15:00:00",
+   "actual_mw": 20817.0,
+   "predicted_mw": 20687.365492839643,
+   "temp_f": 44.0
+  },
+  {
+   "local_end": "2022-12-22T16:00:00",
+   "actual_mw": 20583.0,
+   "predicted_mw": 20532.70374518383,
+   "temp_f": 44.0
+  },
+  {
+   "local_end": "2022-12-22T17:00:00",
+   "actual_mw": 20838.0,
+   "predicted_mw": 20876.764464940854,
+   "temp_f": 44.0
+  },
+  {
+   "local_end": "2022-12-22T18:00:00",
+   "actual_mw": 21802.0,
+   "predicted_mw": 21573.393412203906,
+   "temp_f": 44.0
+  },
+  {
+   "local_end": "2022-12-22T19:00:00",
+   "actual_mw": 21936.0,
+   "predicted_mw": 22372.18147486281,
+   "temp_f": 44.0
+  },
+  {
+   "local_end": "2022-12-22T20:00:00",
+   "actual_mw": 21689.0,
+   "predicted_mw": 22310.73177556133,
+   "temp_f": 44.0
+  },
+  {
+   "local_end": "2022-12-22T21:00:00",
+   "actual_mw": 21331.0,
+   "predicted_mw": 21652.152894539027,
+   "temp_f": 44.0
+  },
+  {
+   "local_end": "2022-12-22T22:00:00",
+   "actual_mw": 20801.0,
+   "predicted_mw": 20935.75648888267,
+   "temp_f": 44.0
+  },
+  {
+   "local_end": "2022-12-22T23:00:00",
+   "actual_mw": 19854.0,
+   "predicted_mw": 19983.664242176503,
+   "temp_f": 43.0
+  },
+  {
+   "local_end": "2022-12-23T00:00:00",
+   "actual_mw": 18833.0,
+   "predicted_mw": 18917.981381784673,
+   "temp_f": 43.0
+  },
+  {
+   "local_end": "2022-12-23T01:00:00",
+   "actual_mw": 18071.0,
+   "predicted_mw": 17827.494937879153,
+   "temp_f": 43.0
+  },
+  {
+   "local_end": "2022-12-23T02:00:00",
+   "actual_mw": 17660.0,
+   "predicted_mw": 17496.308362523847,
+   "temp_f": 43.0
+  },
+  {
+   "local_end": "2022-12-23T03:00:00",
+   "actual_mw": 17345.0,
+   "predicted_mw": 17179.83500536232,
+   "temp_f": 44.0
+  },
+  {
+   "local_end": "2022-12-23T04:00:00",
+   "actual_mw": 17301.0,
+   "predicted_mw": 16866.79897823493,
+   "temp_f": 47.0
+  },
+  {
+   "local_end": "2022-12-23T05:00:00",
+   "actual_mw": 17504.0,
+   "predicted_mw": 16846.327518508737,
+   "temp_f": 49.0
+  },
+  {
+   "local_end": "2022-12-23T06:00:00",
+   "actual_mw": 18212.0,
+   "predicted_mw": 17691.774660910225,
+   "temp_f": 48.0
+  },
+  {
+   "local_end": "2022-12-23T07:00:00",
+   "actual_mw": 19508.0,
+   "predicted_mw": 19044.93216309924,
+   "temp_f": 45.0
+  },
+  {
+   "local_end": "2022-12-23T08:00:00",
+   "actual_mw": 21007.0,
+   "predicted_mw": 21143.059173683614,
+   "temp_f": 36.0
+  },
+  {
+   "local_end": "2022-12-23T09:00:00",
+   "actual_mw": 22387.0,
+   "predicted_mw": 22721.58541642876,
+   "temp_f": 32.0
+  },
+  {
+   "local_end": "2022-12-23T10:00:00",
+   "actual_mw": 23034.0,
+   "predicted_mw": 23133.15059418328,
+   "temp_f": 30.0
+  },
+  {
+   "local_end": "2022-12-23T11:00:00",
+   "actual_mw": 23401.0,
+   "predicted_mw": 24326.13533802142,
+   "temp_f": 28.0
+  },
+  {
+   "local_end": "2022-12-23T12:00:00",
+   "actual_mw": 23403.0,
+   "predicted_mw": 25305.806334350233,
+   "temp_f": 27.0
+  },
+  {
+   "local_end": "2022-12-23T13:00:00",
+   "actual_mw": 23403.0,
+   "predicted_mw": 25543.778170715763,
+   "temp_f": 27.0
+  },
+  {
+   "local_end": "2022-12-23T14:00:00",
+   "actual_mw": 23432.0,
+   "predicted_mw": 25843.237458348227,
+   "temp_f": 27.0
+  },
+  {
+   "local_end": "2022-12-23T15:00:00",
+   "actual_mw": 23674.0,
+   "predicted_mw": 26085.879500469564,
+   "temp_f": 28.0
+  },
+  {
+   "local_end": "2022-12-23T16:00:00",
+   "actual_mw": 24401.0,
+   "predicted_mw": 26458.73215904249,
+   "temp_f": 27.0
+  },
+  {
+   "local_end": "2022-12-23T17:00:00",
+   "actual_mw": 26224.0,
+   "predicted_mw": 27705.895566412255,
+   "temp_f": 25.0
+  },
+  {
+   "local_end": "2022-12-23T18:00:00",
+   "actual_mw": 28926.0,
+   "predicted_mw": 28491.002095740885,
+   "temp_f": 23.0
+  },
+  {
+   "local_end": "2022-12-23T19:00:00",
+   "actual_mw": 30352.0,
+   "predicted_mw": 29874.04967819779,
+   "temp_f": 21.9
+  },
+  {
+   "local_end": "2022-12-23T20:00:00",
+   "actual_mw": 30939.0,
+   "predicted_mw": 30129.992225062655,
+   "temp_f": 19.9
+  },
+  {
+   "local_end": "2022-12-23T21:00:00",
+   "actual_mw": 31424.0,
+   "predicted_mw": 30725.534613969412,
+   "temp_f": 18.0
+  },
+  {
+   "local_end": "2022-12-23T22:00:00",
+   "actual_mw": 31586.0,
+   "predicted_mw": 30555.71499880487,
+   "temp_f": 17.1
+  },
+  {
+   "local_end": "2022-12-23T23:00:00",
+   "actual_mw": 31425.0,
+   "predicted_mw": 29837.161941161532,
+   "temp_f": 15.1
+  },
+  {
+   "local_end": "2022-12-24T00:00:00",
+   "actual_mw": 31197.0,
+   "predicted_mw": 29046.267686088504,
+   "temp_f": 14.0
+  },
+  {
+   "local_end": "2022-12-24T01:00:00",
+   "actual_mw": 31256.0,
+   "predicted_mw": 28254.096259883037,
+   "temp_f": 12.9
+  },
+  {
+   "local_end": "2022-12-24T02:00:00",
+   "actual_mw": 31459.0,
+   "predicted_mw": 28514.736145019575,
+   "temp_f": 12.0
+  },
+  {
+   "local_end": "2022-12-24T03:00:00",
+   "actual_mw": 31758.0,
+   "predicted_mw": 28286.263442748157,
+   "temp_f": 10.9
+  },
+  {
+   "local_end": "2022-12-24T04:00:00",
+   "actual_mw": 32177.0,
+   "predicted_mw": 28629.471322117526,
+   "temp_f": 10.9
+  },
+  {
+   "local_end": "2022-12-24T05:00:00",
+   "actual_mw": 32701.0,
+   "predicted_mw": 28927.195738709583,
+   "temp_f": 10.0
+  },
+  {
+   "local_end": "2022-12-24T06:00:00",
+   "actual_mw": 33500.0,
+   "predicted_mw": 29157.901627522326,
+   "temp_f": 9.0
+  },
+  {
+   "local_end": "2022-12-24T07:00:00",
+   "actual_mw": 33590.0,
+   "predicted_mw": 29368.96085703188,
+   "temp_f": 10.0
+  },
+  {
+   "local_end": "2022-12-24T08:00:00",
+   "actual_mw": 33035.0,
+   "predicted_mw": 29595.99298811842,
+   "temp_f": 10.0
+  },
+  {
+   "local_end": "2022-12-24T09:00:00",
+   "actual_mw": 32985.0,
+   "predicted_mw": 30180.294815668036,
+   "temp_f": 12.0
+  },
+  {
+   "local_end": "2022-12-24T10:00:00",
+   "actual_mw": 32662.0,
+   "predicted_mw": 29903.060857475357,
+   "temp_f": 15.1
+  },
+  {
+   "local_end": "2022-12-24T11:00:00",
+   "actual_mw": 31610.0,
+   "predicted_mw": 29191.021528111414,
+   "temp_f": 18.0
+  },
+  {
+   "local_end": "2022-12-24T12:00:00",
+   "actual_mw": 30094.0,
+   "predicted_mw": 28585.85721483436,
+   "temp_f": 19.9
+  },
+  {
+   "local_end": "2022-12-24T13:00:00",
+   "actual_mw": 28749.0,
+   "predicted_mw": 27784.455690723014,
+   "temp_f": 23.0
+  },
+  {
+   "local_end": "2022-12-24T14:00:00",
+   "actual_mw": 27495.0,
+   "predicted_mw": 26461.422309621732,
+   "temp_f": 25.0
+  },
+  {
+   "local_end": "2022-12-24T15:00:00",
+   "actual_mw": 26673.0,
+   "predicted_mw": 25152.797558560633,
+   "temp_f": 28.0
+  },
+  {
+   "local_end": "2022-12-24T16:00:00",
+   "actual_mw": 26422.0,
+   "predicted_mw": 24736.205404078188,
+   "temp_f": 28.9
+  },
+  {
+   "local_end": "2022-12-24T17:00:00",
+   "actual_mw": 27282.0,
+   "predicted_mw": 24972.804939311787,
+   "temp_f": 27.0
+  },
+  {
+   "local_end": "2022-12-24T18:00:00",
+   "actual_mw": 28848.0,
+   "predicted_mw": 25657.37812779641,
+   "temp_f": 25.0
+  },
+  {
+   "local_end": "2022-12-24T19:00:00",
+   "actual_mw": 29619.0,
+   "predicted_mw": 26704.457015464366,
+   "temp_f": 25.0
+  },
+  {
+   "local_end": "2022-12-24T20:00:00",
+   "actual_mw": 29670.0,
+   "predicted_mw": 27038.566038186094,
+   "temp_f": 24.1
+  },
+  {
+   "local_end": "2022-12-24T21:00:00",
+   "actual_mw": 29648.0,
+   "predicted_mw": 26946.5850154905,
+   "temp_f": 23.0
+  },
+  {
+   "local_end": "2022-12-24T22:00:00",
+   "actual_mw": 29508.0,
+   "predicted_mw": 26537.989164657265,
+   "temp_f": 21.9
+  },
+  {
+   "local_end": "2022-12-24T23:00:00",
+   "actual_mw": 29005.0,
+   "predicted_mw": 25761.972173528153,
+   "temp_f": 21.9
+  },
+  {
+   "local_end": "2022-12-25T00:00:00",
+   "actual_mw": 28608.0,
+   "predicted_mw": 25945.118700500294,
+   "temp_f": 21.0
+  },
+  {
+   "local_end": "2022-12-25T01:00:00",
+   "actual_mw": 28267.0,
+   "predicted_mw": 26673.661606709178,
+   "temp_f": 19.9
+  },
+  {
+   "local_end": "2022-12-25T02:00:00",
+   "actual_mw": 28191.0,
+   "predicted_mw": 26270.193410818807,
+   "temp_f": 19.9
+  },
+  {
+   "local_end": "2022-12-25T03:00:00",
+   "actual_mw": 28374.0,
+   "predicted_mw": 26539.130335939746,
+   "temp_f": 18.0
+  },
+  {
+   "local_end": "2022-12-25T04:00:00",
+   "actual_mw": 28648.0,
+   "predicted_mw": 26729.073881246684,
+   "temp_f": 18.0
+  },
+  {
+   "local_end": "2022-12-25T05:00:00",
+   "actual_mw": 29130.0,
+   "predicted_mw": 27407.826300748755,
+   "temp_f": 16.0
+  },
+  {
+   "local_end": "2022-12-25T06:00:00",
+   "actual_mw": 29768.0,
+   "predicted_mw": 27892.90142638827,
+   "temp_f": 12.9
+  },
+  {
+   "local_end": "2022-12-25T07:00:00",
+   "actual_mw": 30561.0,
+   "predicted_mw": 28338.0579944463,
+   "temp_f": 15.1
+  },
+  {
+   "local_end": "2022-12-25T08:00:00",
+   "actual_mw": 31498.0,
+   "predicted_mw": 28539.139766165557,
+   "temp_f": 18.0
+  },
+  {
+   "local_end": "2022-12-25T09:00:00",
+   "actual_mw": 31232.0,
+   "predicted_mw": 28422.95791692812,
+   "temp_f": 23.0
+  },
+  {
+   "local_end": "2022-12-25T10:00:00",
+   "actual_mw": 29174.0,
+   "predicted_mw": 26629.193121560267,
+   "temp_f": 27.0
+  },
+  {
+   "local_end": "2022-12-25T11:00:00",
+   "actual_mw": 26689.0,
+   "predicted_mw": 25211.349181083904,
+   "temp_f": 30.9
+  },
+  {
+   "local_end": "2022-12-25T12:00:00",
+   "actual_mw": 24965.0,
+   "predicted_mw": 24153.997794651965,
+   "temp_f": 32.0
+  },
+  {
+   "local_end": "2022-12-25T13:00:00",
+   "actual_mw": 23198.0,
+   "predicted_mw": 22908.444901245057,
+   "temp_f": 35.0
+  },
+  {
+   "local_end": "2022-12-25T14:00:00",
+   "actual_mw": 21813.0,
+   "predicted_mw": 22036.105395809358,
+   "temp_f": 35.0
+  },
+  {
+   "local_end": "2022-12-25T15:00:00",
+   "actual_mw": 20872.0,
+   "predicted_mw": 21307.564186962903,
+   "temp_f": 37.0
+  },
+  {
+   "local_end": "2022-12-25T16:00:00",
+   "actual_mw": 20770.0,
+   "predicted_mw": 20570.31305987761,
+   "temp_f": 39.0
+  },
+  {
+   "local_end": "2022-12-25T17:00:00",
+   "actual_mw": 21658.0,
+   "predicted_mw": 21472.860645118566,
+   "temp_f": 37.0
+  },
+  {
+   "local_end": "2022-12-25T18:00:00",
+   "actual_mw": 23457.0,
+   "predicted_mw": 22485.78292936264,
+   "temp_f": 34.0
+  },
+  {
+   "local_end": "2022-12-25T19:00:00",
+   "actual_mw": 24824.0,
+   "predicted_mw": 23552.01842567779,
+   "temp_f": 32.0
+  },
+  {
+   "local_end": "2022-12-25T20:00:00",
+   "actual_mw": 25603.0,
+   "predicted_mw": 24222.970491350385,
+   "temp_f": 30.0
+  },
+  {
+   "local_end": "2022-12-25T21:00:00",
+   "actual_mw": 26205.0,
+   "predicted_mw": 24168.426688383573,
+   "temp_f": 28.9
+  },
+  {
+   "local_end": "2022-12-25T22:00:00",
+   "actual_mw": 26462.0,
+   "predicted_mw": 24836.788950797,
+   "temp_f": 27.0
+  },
+  {
+   "local_end": "2022-12-25T23:00:00",
+   "actual_mw": 26380.0,
+   "predicted_mw": 24861.91225548985,
+   "temp_f": 27.0
+  },
+  {
+   "local_end": "2022-12-26T00:00:00",
+   "actual_mw": 26278.0,
+   "predicted_mw": 25275.909016164216,
+   "temp_f": 21.9
+  },
+  {
+   "local_end": "2022-12-26T01:00:00",
+   "actual_mw": 26331.0,
+   "predicted_mw": 24056.890711060114,
+   "temp_f": 24.1
+  },
+  {
+   "local_end": "2022-12-26T02:00:00",
+   "actual_mw": 26606.0,
+   "predicted_mw": 24380.32096916244,
+   "temp_f": 21.0
+  },
+  {
+   "local_end": "2022-12-26T03:00:00",
+   "actual_mw": 27250.0,
+   "predicted_mw": 25813.54054688781,
+   "temp_f": 19.5
+  },
+  {
+   "local_end": "2022-12-26T04:00:00",
+   "actual_mw": 27923.0,
+   "predicted_mw": 24997.586107906078,
+   "temp_f": 18.0
+  },
+  {
+   "local_end": "2022-12-26T05:00:00",
+   "actual_mw": 28842.0,
+   "predicted_mw": 27331.046979135637,
+   "temp_f": 17.1
+  },
+  {
+   "local_end": "2022-12-26T06:00:00",
+   "actual_mw": 29807.0,
+   "predicted_mw": 27411.3930874277,
+   "temp_f": 19.0
+  },
+  {
+   "local_end": "2022-12-26T07:00:00",
+   "actual_mw": 30723.0,
+   "predicted_mw": 27634.358636307858,
+   "temp_f": 23.0
+  },
+  {
+   "local_end": "2022-12-26T08:00:00",
+   "actual_mw": 31502.0,
+   "predicted_mw": 28062.40303953711,
+   "temp_f": 24.1
+  },
+  {
+   "local_end": "2022-12-26T09:00:00",
+   "actual_mw": 31075.0,
+   "predicted_mw": 26524.500791597697,
+   "temp_f": 28.0
+  },
+  {
+   "local_end": "2022-12-26T10:00:00",
+   "actual_mw": 28969.0,
+   "predicted_mw": 25422.09138845186,
+   "temp_f": 30.9
+  },
+  {
+   "local_end": "2022-12-26T11:00:00",
+   "actual_mw": 26312.0,
+   "predicted_mw": 23470.327267441233,
+   "temp_f": 35.0
+  },
+  {
+   "local_end": "2022-12-26T12:00:00",
+   "actual_mw": 24673.0,
+   "predicted_mw": 22794.779363322585,
+   "temp_f": 35.0
+  },
+  {
+   "local_end": "2022-12-26T13:00:00",
+   "actual_mw": 23157.0,
+   "predicted_mw": 21920.29462926889,
+   "temp_f": 37.0
+  },
+  {
+   "local_end": "2022-12-26T14:00:00",
+   "actual_mw": 21955.0,
+   "predicted_mw": 20966.41270823303,
+   "temp_f": 38.0
+  },
+  {
+   "local_end": "2022-12-26T15:00:00",
+   "actual_mw": 21528.0,
+   "predicted_mw": 20598.763509673947,
+   "temp_f": 39.0
+  },
+  {
+   "local_end": "2022-12-26T16:00:00",
+   "actual_mw": 21604.0,
+   "predicted_mw": 20546.380631614586,
+   "temp_f": 39.0
+  },
+  {
+   "local_end": "2022-12-26T17:00:00",
+   "actual_mw": 22365.0,
+   "predicted_mw": 21118.18869734293,
+   "temp_f": 37.0
+  },
+  {
+   "local_end": "2022-12-26T18:00:00",
+   "actual_mw": 24344.0,
+   "predicted_mw": 21964.654710952957,
+   "temp_f": 35.0
+  },
+  {
+   "local_end": "2022-12-26T19:00:00",
+   "actual_mw": 25510.0,
+   "predicted_mw": 22948.395232662362,
+   "temp_f": 35.0
+  },
+  {
+   "local_end": "2022-12-26T20:00:00",
+   "actual_mw": 25924.0,
+   "predicted_mw": 23532.14506080505,
+   "temp_f": 34.0
+  },
+  {
+   "local_end": "2022-12-26T21:00:00",
+   "actual_mw": 25965.0,
+   "predicted_mw": 23634.028737483357,
+   "temp_f": 32.0
+  },
+  {
+   "local_end": "2022-12-26T22:00:00",
+   "actual_mw": 25594.0,
+   "predicted_mw": 23739.063094461097,
+   "temp_f": 30.9
+  },
+  {
+   "local_end": "2022-12-26T23:00:00",
+   "actual_mw": 24875.0,
+   "predicted_mw": 23372.509466525196,
+   "temp_f": 30.9
+  },
+  {
+   "local_end": "2022-12-27T00:00:00",
+   "actual_mw": 24225.0,
+   "predicted_mw": 22256.884506794544,
+   "temp_f": 33.0
+  }
+ ],
+ "error_by_temperature": [
+  {
+   "temp_bin": "below 20 F",
+   "hours": 109,
+   "mean_pct_error": -8.1361956004383,
+   "mape_pct": 8.2797669566384
+  },
+  {
+   "temp_bin": "20-25 F",
+   "hours": 334,
+   "mean_pct_error": -4.089062572953322,
+   "mape_pct": 4.855179859470807
+  },
+  {
+   "temp_bin": "25-30 F",
+   "hours": 842,
+   "mean_pct_error": -2.7129540740946463,
+   "mape_pct": 4.016893586241279
+  },
+  {
+   "temp_bin": "30-35 F",
+   "hours": 1679,
+   "mean_pct_error": -1.8724080818775048,
+   "mape_pct": 3.9585568534937803
+  },
+  {
+   "temp_bin": "35-45 F",
+   "hours": 5107,
+   "mean_pct_error": -1.2905293945584253,
+   "mape_pct": 3.99693733371023
+  },
+  {
+   "temp_bin": "45 F and above",
+   "hours": 8451,
+   "mean_pct_error": -0.578263728882964,
+   "mape_pct": 3.303608752620826
+  }
+ ]
+}

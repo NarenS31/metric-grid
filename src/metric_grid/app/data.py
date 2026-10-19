@@ -20,7 +20,7 @@ def load_all() -> dict:
         zh = harm.compute_harm(zones, cfg, consts["kw_per_job"])
     return {"cfg": cfg, "consts": consts, "zones": zones, "zh": zh, "warnings": [str(w.message) for w in caught],
             "presolved": frozen.load_presolved(), "sens": frozen.load_sensitivity(), "sweep": frozen.load_alpha_sweep(),
-            "district": frozen.load_district(), "facilities": frozen.load_facilities(), "demand": frozen.load_demand()}
+            "district": frozen.load_district(), "panel": frozen.load_demand_panel(), "facilities": frozen.load_facilities(), "demand": frozen.load_demand()}
 
 
 def pct_options(consts: dict, cfg: dict) -> list[float]:

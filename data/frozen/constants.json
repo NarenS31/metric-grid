@@ -1,7 +1,7 @@
 {
-  "built_utc": "2026-10-19T03:47:52+00:00",
+  "built_utc": "2026-10-19T13:30:18+00:00",
   "scenario": {
-    "name": "Winter Storm Elliott, Dec 24 2022, 07:00",
+    "name": "Winter Storm Elliott, Dec 24 2022, hour ending 07:00 (06:00-07:00)",
     "date": "2022-12-24",
     "eia_window_start_utc": "2022-12-22T00:00",
     "eia_window_end_utc": "2022-12-26T23:00",
@@ -40,67 +40,67 @@
     "police",
     "wastewater_treatment"
   ],
-  "kw_per_unit": 5.4318295039,
-  "kw_per_job": 1.3911281671339761,
+  "kw_per_unit": 5.2580986363,
+  "kw_per_job": 1.3354090865182182,
   "commercial_scope": "state",
-  "D_NC08_mw": 1686.3147134492037,
-  "T_NC08_mw": 91.90941322023045,
-  "r_effective": 0.054503120020958654,
-  "W_NC08_kw": 2023501.3619341822,
+  "D_NC08_mw": 1686.7292053789156,
+  "T_NC08_mw": 91.92977918725065,
+  "r_effective": 0.0545018008190586,
+  "W_NC08_kw": 1955994.0314534605,
   "groups": {
     "DEC": {
       "D_group_mw": 20879.0,
       "r": 0.04789501412902917,
-      "W_district": 1348244.4677385897,
-      "W_group": 24456927.614277355,
-      "share_of_group": 0.055127303355615186,
-      "D_district_mw": 1151.0029667618894,
-      "T_district_mw": 55.12730335561518
+      "W_district": 1303258.2262306595,
+      "W_group": 23632881.10068565,
+      "share_of_group": 0.05514597313286736,
+      "D_district_mw": 1151.3927730411376,
+      "T_district_mw": 55.14597313286736
     },
     "DEP": {
       "D_group_mw": 13986.0,
       "r": 0.06871156871156871,
-      "W_district": 675256.8941955925,
-      "W_group": 17642323.338994574,
-      "share_of_group": 0.03827482816297113,
-      "D_district_mw": 535.3117466873143,
-      "T_district_mw": 36.78210986461526
+      "W_district": 652735.8052228009,
+      "W_group": 17053132.236824714,
+      "share_of_group": 0.038276593188744316,
+      "D_district_mw": 535.336432337778,
+      "T_district_mw": 36.783806054383284
     }
   },
-  "r_definition": "each utility's maximum firm load shed that morning / its demand at 07:00 (not a 07:00 snapshot)",
+  "r_definition": "each utility's maximum firm load shed that morning / its demand in the hour ending 07:00 (06:00-07:00); not a snapshot of the shed in that hour",
   "sensitivity": [
     {
       "case": "default: customer_spread, max shed (DEC 1,000 / DEP 961 MW)",
-      "D_NC08_mw": 1686.3147134492037,
-      "T_NC08_mw": 91.90941322023045,
-      "r_effective": 0.054503120020958654
+      "D_NC08_mw": 1686.7292053789156,
+      "T_NC08_mw": 91.92977918725065,
+      "r_effective": 0.0545018008190586
     },
     {
-      "case": "DEP shed at its ~600 MW 07:00 snapshot (DEC 1,000)",
-      "D_NC08_mw": 1686.3147134492037,
-      "T_NC08_mw": 78.09220025339786,
-      "r_effective": 0.04630938675359557
+      "case": "DEP shed at its ~600 MW level early in that hour (DEC 1,000)",
+      "D_NC08_mw": 1686.7292053789156,
+      "T_NC08_mw": 78.11192904611394,
+      "r_effective": 0.04630970329856029
     },
     {
       "case": "shared counties split equally",
-      "D_NC08_mw": 1672.3874739294265,
-      "T_NC08_mw": 94.55294722044962,
-      "r_effective": 0.05653770354921929
+      "D_NC08_mw": 1672.7593778460762,
+      "T_NC08_mw": 94.57115233529188,
+      "r_effective": 0.05653601682811437
     },
     {
       "case": "shared counties wholly DEC",
-      "D_NC08_mw": 1611.0542105620407,
-      "T_NC08_mw": 87.55701325855128,
-      "r_effective": 0.054347651795035305
+      "D_NC08_mw": 1611.3811964141544,
+      "T_NC08_mw": 87.57095253205279,
+      "r_effective": 0.05434527393451441
     },
     {
       "case": "shared counties wholly DEP",
-      "D_NC08_mw": 1549.8143199962938,
-      "T_NC08_mw": 90.76059450258288,
-      "r_effective": 0.058562237638119075
+      "D_NC08_mw": 1550.1810176565214,
+      "T_NC08_mw": 90.78019190993012,
+      "r_effective": 0.05856102666459343
     }
   ],
-  "protected_load_mw": 278.7882900631934,
+  "protected_load_mw": 278.6747504550936,
   "sources": {
     "zone_load": "modeled district estimate",
     "D_NC08": "modeled district estimate",
@@ -161,6 +161,16 @@
       "name": "LBNL interruption cost estimates (ICE Calculator 2.0 report LBNL-6941E), 2013 dollars",
       "vintage": "2015",
       "url": "https://eta-publications.lbl.gov/sites/default/files/lbnl-6941e.pdf"
+    },
+    {
+      "name": "EIA-930 bulk files, Dec 2017 to Dec 2018 (demand-model training history)",
+      "vintage": "2017-2019",
+      "url": "https://www.eia.gov/electricity/gridmonitor/sixMonthFiles/"
+    },
+    {
+      "name": "KCLT and KRDU hourly temperature via Iowa Environmental Mesonet, winters 2018-2025 (demand-model inputs)",
+      "vintage": "Dec 2017 to Feb 2025",
+      "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py"
     },
     {
       "name": "KCLT ASOS temperature via Iowa Environmental Mesonet (display only)",

@@ -1,0 +1,158 @@
+{
+ "rows": 17328,
+ "winters": [
+  2018,
+  2019,
+  2020,
+  2021,
+  2022,
+  2023,
+  2024,
+  2025
+ ],
+ "bulk_column_used": "Demand (MW)",
+ "api_vs_bulk_overlap_by_column": {
+  "Demand (MW)": {
+   "-1": {
+    "n": 2846,
+    "mae_mw": 332.0449754040759,
+    "share_exact": 0.0010541110330288123
+   },
+   "0": {
+    "n": 2846,
+    "mae_mw": 0.0,
+    "share_exact": 1.0
+   },
+   "1": {
+    "n": 2846,
+    "mae_mw": 331.9251581166549,
+    "share_exact": 0.0010541110330288123
+   }
+  },
+  "Demand (MW) (Imputed)": {
+   "-1": {
+    "n": 0,
+    "mae_mw": null,
+    "share_exact": null
+   },
+   "0": {
+    "n": 0,
+    "mae_mw": null,
+    "share_exact": null
+   },
+   "1": {
+    "n": 0,
+    "mae_mw": null,
+    "share_exact": null
+   }
+  },
+  "Demand (MW) (Adjusted)": {
+   "-1": {
+    "n": 2846,
+    "mae_mw": 332.0449754040759,
+    "share_exact": 0.0010541110330288123
+   },
+   "0": {
+    "n": 2846,
+    "mae_mw": 0.0,
+    "share_exact": 1.0
+   },
+   "1": {
+    "n": 2846,
+    "mae_mw": 331.9251581166549,
+    "share_exact": 0.0010541110330288123
+   }
+  }
+ },
+ "per_winter": {
+  "2018": {
+   "hours": 2160,
+   "duk_missing": 0,
+   "cple_missing": 0,
+   "kclt_missing": 0,
+   "krdu_missing": 0,
+   "sources": [
+    "bulk"
+   ]
+  },
+  "2019": {
+   "hours": 2160,
+   "duk_missing": 0,
+   "cple_missing": 24,
+   "kclt_missing": 0,
+   "krdu_missing": 0,
+   "sources": [
+    "api",
+    "bulk"
+   ]
+  },
+  "2020": {
+   "hours": 2184,
+   "duk_missing": 0,
+   "cple_missing": 0,
+   "kclt_missing": 4,
+   "krdu_missing": 4,
+   "sources": [
+    "api"
+   ]
+  },
+  "2021": {
+   "hours": 2160,
+   "duk_missing": 0,
+   "cple_missing": 0,
+   "kclt_missing": 0,
+   "krdu_missing": 0,
+   "sources": [
+    "api"
+   ]
+  },
+  "2022": {
+   "hours": 2160,
+   "duk_missing": 0,
+   "cple_missing": 0,
+   "kclt_missing": 0,
+   "krdu_missing": 0,
+   "sources": [
+    "api"
+   ]
+  },
+  "2023": {
+   "hours": 2160,
+   "duk_missing": 0,
+   "cple_missing": 0,
+   "kclt_missing": 4,
+   "krdu_missing": 0,
+   "sources": [
+    "api"
+   ]
+  },
+  "2024": {
+   "hours": 2184,
+   "duk_missing": 0,
+   "cple_missing": 0,
+   "kclt_missing": 0,
+   "krdu_missing": 0,
+   "sources": [
+    "api"
+   ]
+  },
+  "2025": {
+   "hours": 2160,
+   "duk_missing": 0,
+   "cple_missing": 0,
+   "kclt_missing": 0,
+   "krdu_missing": 0,
+   "sources": [
+    "api"
+   ]
+  }
+ },
+ "temperature_stations": {
+  "DUK": "KCLT (Charlotte)",
+  "CPLE": "KRDU (Raleigh-Durham)"
+ },
+ "notes": [
+  "EIA hours are labelled by the UTC time at the END of the hour",
+  "temperature gaps of up to 3 hours interpolated, longer gaps left missing"
+ ]
+}

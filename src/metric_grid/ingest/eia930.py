@@ -101,7 +101,7 @@ def group_demand(df: pd.DataFrame, cfg: dict) -> pd.DataFrame:
 
 
 def demand_at(wide: pd.DataFrame, local_date: str, local_hhmm: str, column: str) -> float:
-    """Demand (MW) of `column` for the hour starting at the given local date/time."""
+    """Demand (MW) of `column` for the hour ENDING at the given local date/time (EIA labels hours by their end)."""
     t = pd.Timestamp(f"{local_date} {local_hhmm}", tz=str(wide["local_time"].dt.tz))
     hit = wide[wide["local_time"] == t]
     if len(hit) != 1:
@@ -110,7 +110,7 @@ def demand_at(wide: pd.DataFrame, local_date: str, local_hhmm: str, column: str)
 
 
 def reduction_ratios(wide: pd.DataFrame, cfg: dict) -> dict:
-    """Per group: r_g = max firm load shed (FERC-NERC / SC ORS reports) / group demand at the reference hour.
+    """Per group: r_g = max firm load shed (FERC-NERC / SC ORS reports) / group demand in the reference hour (the hour ending 07:00, i.e. 06:00-07:00).
 
     Regional numbers only: T_NC08 is computed later from district-scaled load, never from these MW.
     """

@@ -21,20 +21,24 @@ It shows them side by side on a map of 183 census tract zones, with every assump
 
 ## The default scenario (modeled)
 
-Required reduction 91.9 MW (modeled district estimate), alpha 0.5, both plans cut between 91.9 and 93.7 MW:
+Required reduction 91.9 MW (modeled district estimate, scaled to the hour ending 07:00 on Dec 24, 2022), alpha 0.5, both plans cut between 91.9 and 93.8 MW:
 
 | | Load-only baseline | Vulnerability-aware plan |
 |---|---|---|
-| MW cut | 91.9 | 92.1 |
+| MW cut | 91.9 | 92.2 |
 | Zones cut | 6 | 10 |
-| Households cut | 15,443 | 17,956 |
-| Electric-heat households cut | 8,837 | 5,484 |
-| Vulnerability-weighted households | 7,860 | 2,053 |
-| Interruption cost (2013 dollars, 1 hour) | $478,888 | $271,958 |
+| Households cut | 15,593 | 17,956 |
+| Electric-heat households cut | 10,029 | 5,484 |
+| Vulnerability-weighted households | 7,578 | 2,053 |
+| Interruption cost (2013 dollars, 1 hour) | $432,943 | $264,733 |
 
-**The vulnerability-aware plan cuts MORE households (+2,513) but far fewer vulnerability-weighted and electric-heat households, and costs less.** It also concentrates 88% of its cut in one low-vulnerability county (Union). At alpha 0 (cost only) it does worse than the baseline on human harm. The page says all of this in plain words next to the numbers.
+**The vulnerability-aware plan cuts MORE households (+2,363) but far fewer vulnerability-weighted and electric-heat households, and costs less.** It also concentrates 88% of its cut in one low-vulnerability county (Union). At alpha 0 (cost only) it does worse than the baseline on human harm. The page says all of this in plain words next to the numbers. **The load-only baseline is one of very many equivalent plans, so the sizes of these differences depend on which one is shown; the directions hold against 120 other plans that meet the same MW band (see `docs/ASSUMPTIONS.md`, "Baseline plan instability").**
 
 ![Trade-off across alpha](docs/figures/alpha_tradeoff.png)
+
+## Why forecasts aren't enough (winter demand model)
+
+A small model of winter hourly demand for the two Duke balancing authorities from temperature and calendar (EIA-930 and airport temperatures, eight winters), validated with leave-one-winter-out cross-validation and a held-out December 2022. **Modeled demand estimate; not a utility forecast; it does not predict outages or available supply.** The app panel shows the honest result: cross-validated error about 3.7% (DUK+CPLE), but at the hour ending 07:00 (06:00-07:00) on Dec 24, 2022 it **under-predicted by 12.6%** (29,369 MW predicted vs 33,590 MW actual), because extreme cold is rare in the training data, and observed demand already excluded shed load. Only a precomputed curve ships (no scikit-learn at runtime; the panel hides itself if its file is missing). The full protocol and every number are in `docs/ASSUMPTIONS.md` (section "Winter demand model"); `make demand-train` re-runs it offline.
 
 ## Honest limits
 
@@ -73,13 +77,14 @@ The app reads only `data/frozen/` (committed, about 1 MB). There are no live API
 | SC Office of Regulatory Staff report on DEC/DEP December 2022 outages | 2023 | 1,000 MW (DEC) and 961 MW (DEP) sheds |
 | FERC-NERC staff report on Winter Storm Elliott | Nov 2023 | same shed amounts, timing |
 | LBNL interruption cost estimates (ICE report LBNL-6941E) | 2015, 2013 dollars | cost per household and per kW |
+| KCLT and KRDU hourly temperature via Iowa Environmental Mesonet; EIA-930 history (API from 2019, bulk files before) | Dec 2017 to Feb 2025 | winter demand model |
 | KCLT temperature via Iowa Environmental Mesonet | 2022-12-23 to 25 | display only |
 
 URLs, retrieval notes and every fallback are in `docs/DATA_SOURCES.md` and `docs/ASSUMPTIONS.md`. Fallbacks used: tracts instead of substation zones; OpenStreetMap instead of HIFLD for facilities; statewide instead of county ResStock; IEM instead of NOAA NCEI for temperature.
 
 ## Layout
 
-`config.yaml` (every constant), `src/metric_grid/{ingest,geometry,model,app}`, `tests/`, `data/frozen/` (runtime inputs), `docs/` (sources, assumptions, AI disclosure, video shot list, reviews), `scripts/app_screenshots.py` (dev tool). `docs/SPEC.md` is the original brief; amendments are in `CLAUDE.md` and `docs/ASSUMPTIONS.md`.
+`config.yaml` (every constant), `src/metric_grid/{ingest,geometry,model,train,app}` (`train/` is the build-time demand model), `tests/`, `data/frozen/` (runtime inputs), `docs/` (sources, assumptions, AI disclosure, video shot list, reviews), `scripts/app_screenshots.py` (dev tool). `docs/SPEC.md` is the original brief; amendments are in `CLAUDE.md` and `docs/ASSUMPTIONS.md`.
 
 ## Prior work
 

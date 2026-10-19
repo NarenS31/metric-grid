@@ -65,14 +65,20 @@ def test_both_plans_inside_their_band_in_every_setting(rows, consts):
         assert T - 1e-9 <= r.baseline_mw <= hi + 1e-9 and T - 1e-9 <= r.weighted_mw <= hi + 1e-9
 
 
-def test_weighted_plan_cuts_more_households_everywhere_and_we_say_so(rows):
-    assert (rows["households_change"] > 0).all()  # the honest headline: more households, less vulnerable ones
+def test_weighted_plan_cuts_more_households_almost_everywhere_and_we_say_so(rows):
+    """The honest headline: more households, less vulnerable ones. After the 2026-10-19 recomputation one setting
+    (alpha 0.25, w_svi 0.9) is a near tie at 63 FEWER households; the page counts these live."""
+    more = rows["households_change"] > 0
+    assert more.sum() == len(rows) - 1 and rows[~more]["households_change"].abs().max() < 100
+    d = rows[(rows["setting"] == "grid") & (rows["alpha"] == 0.5) & (rows["w_svi"] == 0.7)].iloc[0]
+    assert d["households_change"] > 2000
 
 
 def test_human_harm_lower_except_economic_only_alpha(rows):
     assert (rows.loc[rows["alpha"] > 0, "human_change_pct"] < 0).all()
     assert (rows.loc[rows["alpha"] == 0, "human_change_pct"] > 0).all()  # alpha=0 ignores human harm by construction
-    assert (rows["econ_change_pct"] < 0).all()
+    assert (rows.loc[rows["alpha"] <= 0.5, "econ_change_pct"] < 0).all()  # cost is lower whenever cost carries weight
+    assert (rows.loc[rows["alpha"] == 1, "econ_change_pct"] > 0).all()   # at alpha 1 cost is ignored and comes out about 5% higher
 
 
 def test_band_rows_match_default_and_small_cost_row_differs(rows):
@@ -150,7 +156,8 @@ def test_plain_summary_says_fewer_when_it_is_fewer_and_never_hides_direction():
 
 def test_real_default_summary_states_the_more_households_fact(consts):
     rec = [r for r in frozen.load_presolved() if r["target_key"] == "elliott" and r["alpha"] == 0.5][0]
-    assert "2,513 MORE households" in rec["summary"] and "2013 dollars" in rec["summary"]
+    more = rec["weighted"]["households"] - rec["baseline"]["households"]
+    assert more > 0 and f"{more:,.0f} MORE households" in rec["summary"] and "2013 dollars" in rec["summary"]
 
 
 # ---------------- presolved grid and figures ----------------
@@ -191,17 +198,18 @@ def test_alpha_sweep_rows_and_figure_exist():
 
 def test_priority_list_definition(sens, rows):
     pl = pd.DataFrame(sens["priority_list"])
-    assert set(pl["zone_id"]) == {8, 23, 10, 32, 142, 12}
     pos = rows[rows["alpha"] > 0]
     ever_pos = set().union(*[set(i) for i in pos["weighted_zone_ids"]])
     zero = rows[rows["alpha"] == 0]
     ever_zero = set().union(*[set(i) for i in zero["weighted_zone_ids"]])
+    assert set(pl["zone_id"]) == set(sens["default_baseline_ids"]) - ever_pos  # the definition, recomputed from the table
     for r in pl.itertuples():
         assert r.zone_id in sens["default_baseline_ids"] and r.zone_id not in ever_pos
         assert r.cut_at_alpha0 == (r.zone_id in ever_zero)
     assert list(pl["RPL_THEMES"]) == sorted(pl["RPL_THEMES"], reverse=True)
     assert {"COUNTY", "share_electric_heat", "occupied_units"} <= set(pl.columns)
-    assert set(pl.loc[pl["cut_at_alpha0"], "zone_id"]) == {8, 10}
+    assert set(pl.loc[pl["cut_at_alpha0"], "zone_id"]) == set(pl["zone_id"]) & ever_zero
+    assert len(pl) >= 4
 
 
 def test_priority_list_live_matches_frozen(sens, consts):

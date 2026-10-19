@@ -13,6 +13,8 @@ The brief below is kept as written. These are the places where the build differs
 | 2026-10-18 | The demo grid is pre-solved at `make freeze`, not at app start | The 10-20% presets take 2-3 s each, and the first capped solve exceeded the 2 s limit |
 | 2026-10-19 | The reduction slider has four stops only: Elliott (default), 10%, 15%, 20% | Every stop is pre-solved and instant; off-grid stops fell back to a nearest result |
 | 2026-10-19 | The optional node (spec Phase 5) and its firmware folder are out of this submission | The hardware prototype is still in progress |
+| 2026-10-19 | "07:00" means the hour ending 07:00 (06:00-07:00); the NREL load hour was moved to match, giving D_NC08 = 1,686.7 MW and T_NC08 = 91.93 MW | EIA labels each hour by its END (confirmed against EIA's bulk files); the first build used 07:00-08:00 load by mistake |
+| 2026-10-19 | Added a winter demand model and the panel "Why forecasts aren't enough" (not in the brief); the empty `nodes/` stubs were deleted | Shows that a validated temperature model still missed the Elliott morning by 12.6%; the stubs were unused |
 
 ---
 
