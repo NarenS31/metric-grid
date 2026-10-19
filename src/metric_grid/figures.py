@@ -45,6 +45,7 @@ def demand_figure(out_path=ROOT / "docs" / "figures" / "demand_elliott.png") -> 
 
 def zone_map_figure(out_path=ROOT / "docs" / "figures" / "zone_map_L.png") -> None:
     """Zones coloured by estimated zone load L_i (MW); protected zones hatched with a heavy outline. Reads data/frozen only."""
+    from matplotlib.lines import Line2D
     from matplotlib.patches import Patch
 
     from metric_grid import frozen
@@ -56,7 +57,9 @@ def zone_map_figure(out_path=ROOT / "docs" / "figures" / "zone_map_L.png") -> No
                legend_kwds={"label": "Estimated zone load L_i at 07:00 (MW, modeled district estimate)", "shrink": 0.7})
     prot = zones[zones["protected"]]
     prot.plot(facecolor="none", edgecolor="black", linewidth=1.6, hatch="///", ax=ax)
-    ax.legend(handles=[Patch(facecolor="none", edgecolor="black", hatch="///", label="protected (hospital, nursing home, water treatment)")],
+    frozen.load_district().boundary.plot(ax=ax, color="#d95f02", linewidth=2.2)
+    ax.legend(handles=[Patch(facecolor="none", edgecolor="black", hatch="///", label="protected (hospital, nursing home, water treatment)"),
+                       Line2D([0], [0], color="#d95f02", lw=2.2, label="NC-08 district outline (tracts shown whole)")],
               loc="lower left", fontsize=8)
     ax.set_axis_off()
     ax.set_title(f"NC-08 census tract zones: {consts['n_zones']} zones, {consts['n_protected']} protected\n"

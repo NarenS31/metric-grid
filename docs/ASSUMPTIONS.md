@@ -8,9 +8,59 @@ Judgment calls, proxies, data-source failures and the fallbacks used are recorde
 - Outage duration `h = 1` is a judgment call.
 - Banned/required vocabulary is enforced by a lint test (Phase 4).
 
-## Harm model formula
-TBD Phase 4: full formula, symbols, sources, normalization, missing-data rules, worked single-zone example.
+## Harm model (Phase 4.1)
 
+Two separate quantities with units, stored as separate columns, then a user-weighted blend.
+
+| Symbol | Meaning | Source |
+|---|---|---|
+| N_i | occupied households in zone i | ACS 2024 5-year B25003_001 |
+| SVI_i | RPL_THEMES, 0 to 1 | CDC/ATSDR SVI 2022 (already contains age 65+, so no separate age term) |
+| EHeat_i | occupied units heated by electricity / occupied units | ACS B25040_004 / B25040_001 |
+| J_i,s | jobs in zone i | LODES 2023 (manufacturing CNS05, retail CNS07, health CNS16, other = total - those) |
+| w_s, w_e | 0.7, 0.3 | judgment calls (config), varied in the sensitivity panel |
+| c_res | $5.1 per household for a 1-hour interruption | LBNL ICE report LBNL-6941E, Table ES-1, p. xii (PDF p. 14); Table ES-2 non-summer morning also $5.1 (p. xiii, PDF p. 15). U.S. 2013 dollars, not inflated |
+| c_job | $21.8 per average kW (Medium and Large C&I, 1 hour, same table) x 1.3911 kW per job = $30.33 per job | ICE Table ES-1; kW per job from ComStock NC / LODES NC jobs (Phase 2) |
+| h | 1 hour | judgment call; only 1 is supported because the ICE inputs are the 1-hour column |
+
+- H_human_i = N_i x (w_s x SVI_i + w_e x EHeat_i)    [households x dimensionless, "vulnerability-weighted households"]
+- H_econ_i = N_i x c_res x h + sum over sectors of J_i,s x c_job x h    [dollars]
+- Hhat_human_i = H_human_i / max_j H_human_j; Hhat_econ_i = H_econ_i / max_j H_econ_j (max over zones with data)
+- H_i(alpha) = alpha x Hhat_human_i + (1 - alpha) x Hhat_econ_i, alpha from the UI, default 0.5.
+
+**ICE limitation.** The report gives costs by customer size class (Small C&I under 50,000 kWh/yr; Medium and Large C&I), not by NAICS sector, so manufacturing, retail, health and other all use one commercial rate. Choosing the Medium and Large class is a judgment call (most commercial kW sits in larger customers); the Small C&I rate ($295.0 per average kW, 13.5x higher) is a sensitivity case: with it the harm-weighted plan's interruption-cost change goes from -43% to -54% and the plan is the same size (16 zones differ). Costs per average kW are applied to the ComStock kW at the cold 07:00 hour, which is above an annual-average kW, so economic cost per job is likely overstated. Dollars are 2013 dollars.
+
+**Worked example (zone_id 141, GEOID 37179020305, Union County).** N = 2,959; SVI = 0.0890; EHeat = 0.2856; jobs = 571.
+H_human = 2,959 x (0.7 x 0.0890 + 0.3 x 0.2856) = 437.8. H_econ = 2,959 x $5.1 + 571 x $30.33 = $15,091 + $17,316 = $32,407.
+max H_human = 2,018.9, max H_econ = $267,572, so Hhat_human = 0.2169, Hhat_econ = 0.1211, and H(0.5) = 0.1690. A test recomputes a zone from raw inputs.
+
+**Missing data.** A zone with households but no SVI or electric-heat value gets NaN H_human, a visible MissingDataWarning, is excluded from the normalization maximum, and the optimizer raises MissingDataError rather than price it. Zone 9 (GEOID 37007980000) has no SVI but 0 occupied households, so H_human = 0 by definition (N_i = 0), not by a zero-fill; it is included in normalization as 0, a warning says so, and its H_econ is positive because it has 431 jobs.
+
+## Optimizer, shared target band (Phase 4.2; changes the spec's "T*" rule, decided 2026-10-18)
+
+Both plans use the same band: T_NC08 <= sum x_i L_i <= T_NC08 + delta, delta = 2% of T_NC08 (1.84 MW at T_NC08 = 91.9 MW), x_i = 0 for protected zones. The UI says "both plans cut between X and Y MW" and reports each plan's actual MW.
+- **Stage A (load-only baseline):** minimize sum x_i L_i inside the band (least overshed). **Stage B (vulnerability-aware):** minimize sum x_i H_i(alpha) inside the same band. Ties: fewest zones, then lowest zone_id.
+- If the band has no solution it is widened through 3%, 4%, 5% and the width used is reported; if still empty, or the target exceeds the unprotected load, the result is Infeasible with the maximum feasible reduction (unprotected load) and an explanation.
+- **Tolerance.** Stage A is least-overshed within 10 kW (`load_tol_mw: 0.01`); loads within 10 kW count as tied and then go to the fewest-zones and lowest-zone_id rules. A 0.1 kW tolerance made the solve about 10 s.
+- **Why a band (the reason differs from the first assumption).** The check done before this change found that exact equality (sum within 1e-6 of Stage A's optimum) is NOT infeasible: with 157 selectable zones, a subset-sum count finds about 5 x 10^12 subsets at 0.1 kW resolution (about 5 x 10^16 per MW), and Stage A's optimum overshoots T_NC08 by only 5 to 13 kW. Solving Stage B under exact equality with CBC also returned a plan different from Stage A's (10 zones vs 6; harm sum 1.100 vs 2.411 in normalized units). The real problem is run time: that solve took about 34 s, against about 0.5 s for the band, and the 2% band loses nothing (harm sum 1.017, lower than the equality solve). The band is kept because load is shed in discrete blocks and operators cannot hit an exact MW, and because it is about 60 times faster.
+- **Run time.** Default scenario (T_NC08, 183 zones): about 0.5 to 0.6 s for both plans. The 10, 15 and 20% presets take 2 to 3 s (Stage A's tie-break solve dominates); the app must pre-solve those, see Phase 4 step 5. Tests assert under 2 s for the default.
+- **Bug found by tests:** PuLP ignores `upBound` on Binary variables, so an early version selected protected zones. The hard exclusion is now an explicit `x_i == 0` constraint and tests cover it.
+
+**Default scenario result (alpha = 0.5, band 91.91 to 93.75 MW, 0.6 s):**
+
+| | Load-only baseline | Harm-weighted plan |
+|---|---|---|
+| MW cut (overshoot) | 91.91 (0.01) | 92.10 (0.19) |
+| Zones cut | 6 | 10 |
+| Households | 15,443 | 17,956 |
+| Electric-heat households | 8,837 | 5,484 |
+| Vulnerability-weighted households | 7,860 | 2,053 (-74%) |
+| Interruption cost (1 h, 2013$) | $478,888 | $271,958 (-43%) |
+
+16 zones differ between the plans. The harm-weighted plan cuts more households but less vulnerable ones (mean SVI 0.03 vs 0.52). Band sensitivity (1%, 2%, 5%): identical plans, so the harm difference survives. Alpha sweep: at alpha 0 (economic only) the weighted plan imposes +50% human harm while saving 69% of economic cost; at alpha 1 it saves 83% of human harm and 2% of cost.
+
+## Data-source failures and fallbacks
+See
 ## Phase 1 data decisions and fallbacks (2026-10-18)
 
 - **TIGER congressional districts, file name deviation.** The spec names `tl_2024_us_cd119.zip`; that URL returns 404. The 2024 release publishes cd119 per state, so we use `tl_2024_37_cd119.zip` (same data, NC only). No fallback data involved.

@@ -18,7 +18,7 @@ When a utility can't meet demand it sheds load by opening breakers at substation
 2. Zones are "synthetic analysis zones generated around public infrastructure points; not actual feeder boundaries." If substation data is unavailable, zones are census tracts, labeled as such.
 3. The baseline is the "load-only baseline" with a defined objective. It is not a description of what Duke does.
 4. District scaling comes first: `D_NC08 = sum over utilities g of D_g * W_NC08_in_g / W_g` (Duke Energy Carolinas and Duke Energy Progress both serve NC-08), then `T_NC08 = sum_g D_NC08_g * r_g`. Both are modeled district estimates. *The Elliott regional event anchors this scenario. NC-08 load and required reduction are modeled district-scale estimates, not observed utility circuit values.*
-5. Equal feasible target: Stage A finds the minimum feasible reduction `T*` ≥ `T_NC08`; Stage B holds the weighted plan to exactly `T*`. Infeasible requests produce an explanation with the maximum feasible value.
+5. Shared target band: both plans must cut between `T_NC08` and `T_NC08 + δ` (δ = 2% by default, widened to at most 5%). The load-only baseline minimizes MW cut; the harm-weighted plan minimizes modeled harm. Infeasible requests produce an explanation with the maximum feasible value.
 6. Critical facilities are hard exclusions (`x_i = 0`) at zone level. This may protect more modeled load than necessary, and public facility datasets may be incomplete.
 7. No fabricated data. If a source fails, the failure and fallback are documented in `docs/ASSUMPTIONS.md` before continuing.
 8. After `make data` and `make freeze`, the app runs fully offline from `data/frozen/`.

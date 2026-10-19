@@ -123,6 +123,11 @@ def test_frozen_sensitivity_rows_include_dep_600():
     assert dep600["T_NC08_mw"] == pytest.approx(78.1, abs=0.1) and dep600["D_NC08_mw"] == pytest.approx(c["D_NC08_mw"])
 
 
+def test_frozen_district_outline_present():
+    d = frozen.load_district()
+    assert len(d) == 1 and d.geometry.iloc[0].is_valid
+
+
 def test_r_definition_wording():
     assert "maximum firm load shed" in frozen.load_constants()["r_definition"]
 

@@ -11,12 +11,14 @@
 2. Voronoi cells = "synthetic analysis zones generated around public infrastructure points; not actual feeder boundaries." If no substation data, zones are census tracts, labeled so.
 3. Baseline = "load-only baseline" with a defined objective; never described as what Duke does.
 4. District scaling first (amended 2026-10-18 for two utilities, DEC and DEP): `D_NC08 = sum_g D_g * W_NC08_in_g / W_g`, then `T_NC08 = sum_g D_NC08_g * r_g`. Never allocate BA demand or the regional reduction into NC-08 directly. UI must say: "The Elliott regional event anchors this scenario. NC-08 load and required reduction are modeled district-scale estimates, not observed utility circuit values."
-5. Equal feasible target: Stage A finds min feasible `T*` >= `T_NC08`; Stage B holds the weighted plan to exactly `T*`. Infeasible request returns explanation + max feasible value, never a crash.
+5. Shared target band (amended 2026-10-18, replaces exact `T*`): both plans must cut between `T_NC08` and `T_NC08 + delta` (delta = 2% by default, widened to 5% if needed; UI says "both plans cut between X and Y MW"). Stage A (load-only baseline) minimizes MW cut, Stage B minimizes harm, ties: fewest zones then lowest zone_id. Infeasible request returns explanation + max feasible value, never a crash.
 6. Critical facilities are hard exclusions (`x_i = 0`) at zone level; UI notes this may over-protect and facility data may be incomplete.
 7. Never fabricate data. If a source fails: stop, state what failed and the fallback, document in docs/ASSUMPTIONS.md, then continue. No silent synthetic substitution.
 8. App runs offline from `data/frozen/` after `make data`/`make freeze`. No runtime API calls.
 9. No claims of predicting failures, sensing the grid, verifying zones, or controlling utility equipment. **Banned words:** "privacy-preserving," "federated learning," "AI optimizer," "conventional plan," "circuit," "feeder," "service area," "neighborhood demand," "least harm," "outage plan." (Banned list quoted in this file and docs/SPEC.md is exempt from the lint test; the exact district-scaling sentence in rule 4 is required.) **Use:** load-only baseline; synthetic analysis zone; estimated zone load; modeled district estimate; lowest modeled harm; planning scenario.
 10. Keep docs/AI_DISCLOSURE.md current: every AI tool (Claude, Claude Code, Perplexity), per-file status (AI-scaffolded / AI-assisted / author-written) and what the author changed.
+
+Every map draws the NC-08 district outline (data/frozen/district.geojson). Amendments to docs/SPEC.md live in this file and docs/ASSUMPTIONS.md.
 
 ## Stack
 Python 3.11+, Streamlit, GeoPandas, shapely, scipy, PuLP (CBC), pandas, pyarrow, pydeck, pytest, requests, pyyaml. Node (later): FastAPI + SQLite, httpx, python-kasa, ESP32 Feather V2 firmware. Make targets: data, freeze, test, app, demo, api. Ask before adding anything else.

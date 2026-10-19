@@ -1,6 +1,6 @@
 """Phase 3.4 `make freeze`: write the only runtime inputs to data/frozen/ from data/raw/processed/.
 
-Outputs: zones.geojson (zones + attributes + L_i), facilities.geojson, demand_groups.csv, temp_kclt.csv, constants.json.
+Outputs: district.geojson (NC-08 outline), zones.geojson (zones + attributes + L_i), facilities.geojson, demand_groups.csv, temp_kclt.csv, constants.json.
 """
 import json
 from datetime import datetime, timezone
@@ -76,6 +76,9 @@ def freeze() -> dict:
     out = zones.copy()
     out["geometry"] = out.geometry.simplify(SIMPLIFY_DEG, preserve_topology=True)
     out.to_crs(4326).to_file(FROZEN / "zones.geojson", driver="GeoJSON")
+    dist = gpd.read_file(PROCESSED / "district.geojson")
+    dist["geometry"] = dist.geometry.simplify(SIMPLIFY_DEG, preserve_topology=True)
+    dist[["STATEFP", "CD119FP", "geometry"]].to_file(FROZEN / "district.geojson", driver="GeoJSON")
     f = fac.copy()
     f["protected"] = f["facility_type"].isin(cfg["facilities"]["protected_types"])
     f.to_file(FROZEN / "facilities.geojson", driver="GeoJSON")

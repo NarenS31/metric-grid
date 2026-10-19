@@ -27,3 +27,8 @@ def load_facilities() -> gpd.GeoDataFrame:
 def load_demand() -> pd.DataFrame:
     """Hourly EIA-930 demand per utility group (DEC, DEP) for 2022-12-22..26 with local time."""
     return pd.read_csv(FROZEN / "demand_groups.csv")
+
+
+def load_district() -> gpd.GeoDataFrame:
+    """NC-08 boundary (WGS84, simplified), drawn as an outline on every map."""
+    return gpd.read_file(FROZEN / "district.geojson")

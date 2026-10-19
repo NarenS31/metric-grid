@@ -88,21 +88,32 @@ harm:
   w_svi: 0.7                  # judgment call, see docs/ASSUMPTIONS.md
   w_eheat: 0.3                # judgment call
   alpha_default: 0.5          # human <-> economic mix, UI-adjustable
-  h_hours: 1                  # outage duration h for the cost term; judgment call
-  # Interruption cost per event-hour, LBNL ICE Calculator 2.0. TODO Phase 4: fill with page cites. null = not yet sourced.
-  c_res: null
-  c_sector:
-    manufacturing: null       # LODES CNS05
-    retail: null              # LODES CNS07
-    health: null              # LODES CNS16
-    other: null
+  h_hours: 1                  # outage duration h; only 1 is supported because the ICE inputs below are the 1-hour column
+  # Interruption costs, LBNL "Updated Value of Service Reliability Estimates for Electric Utility Customers in the
+  # United States" (ICE Calculator 2.0 report, LBNL-6941E, Sullivan et al. 2015), 1-hour interruption, U.S. 2013 dollars
+  # (not inflated). Table ES-1, report p. xii (PDF p. 14); residential non-summer morning is also $5.1 (Table ES-2, p. xiii, PDF p. 15).
+  ice:
+    residential_per_household_1h: 5.1        # $ per event, Residential, weighted average
+    medium_large_ci_per_avg_kw_1h: 21.8      # $ per average kW, Medium and Large C&I (> 50,000 kWh/yr)
+    small_ci_per_avg_kw_1h: 295.0            # $ per average kW, Small C&I (< 50,000 kWh/yr)
+    # The report gives costs by customer SIZE class, not by NAICS sector (manufacturing / retail / health), so one commercial
+    # class is used for all sectors. "medium_large" is a judgment call (most commercial kW is in larger customers);
+    # "small" is the sensitivity case (13.5x higher per kW). Cost per job = $/kW x ComStock kW per job (frozen constants).
+    commercial_class: "medium_large"
 
 optimizer:
   solver: "CBC"
-  rel_tol: 1.0e-6
   max_solve_seconds: 2.0
+  # Shared target band for BOTH plans: T_NC08 <= sum x_i L_i <= T_NC08 + delta. delta = band_pct of T_NC08.
+  # Why a band: load is shed in discrete blocks and operators cannot hit an exact MW. If the band is infeasible it is widened
+  # through band_widen_pct (up to 5%); if still infeasible the result is Infeasible. (Exact equality is feasible with real
+  # zone loads, see docs/ASSUMPTIONS.md; the band is a modeling choice, not a workaround for infeasibility.)
+  band_pct: 2.0
+  band_widen_pct: [3.0, 4.0, 5.0]
+  band_sensitivity_pct: [1.0, 2.0, 5.0]
+  load_tol_mw: 0.01           # baseline is least-overshed within 10 kW (finer is not operationally meaningful and 100x slower)
   target_pcts: [10, 15, 20]   # % of modeled NC-08 load
-  target_pct_default: 15
+  # Default scenario target is T_NC08 (the Elliott-anchored district estimate, ~5.5% of modeled load); target_pcts are slider presets.
   alpha_grid: [0, 0.25, 0.5, 0.75, 1]
   w_svi_grid: [0.5, 0.7, 0.9]
 
