@@ -150,6 +150,49 @@ Compared with the cap OFF numbers (weighted: 88% of cuts in Union; vulnerability
 - **Citations.** The NCUC docket citation was removed. Each remaining prior-work entry's title and authors were confirmed from arXiv or Crossref records (the "UT Austin" entry was identified through the university's news release and confirmed in Crossref: Toplu-Tutay, Hasenbein, Kutanoglu, 2024). They were not read in full by the assistant; the author should read them before describing them in the video.
 - **Hardware prototype.** The three empty firmware placeholders and the throwaway test sketches were deleted; the README has a one-line note that the prototype is in progress and not part of this submission. The empty `src/metric_grid/nodes/*.py` stubs from the original layout remain.
 
+## Winter demand model (branch `demand-model`; added 2026-10-19)
+
+A modeled demand estimate: hourly DUK and CPLE demand from temperature and calendar. **Not a utility forecast; it does not predict outages or available supply.** The app panel is not built yet (awaiting the validation review).
+
+**Data.** EIA-930 hourly demand for DUK and CPLE (CPLW is not included), winters 2018 to 2025 (winter Y = Dec Y-1, Jan Y, Feb Y; 8 winters, 17,328 hourly rows, `data/frozen/demand_training.csv.gz`, 185 KB). The EIA API's hourly region data starts at **2019-01-01**, so Dec 2017 to Dec 2018 come from EIA's own bulk CSV files (the spec's documented fallback; the same EIA-930 data); the API is used for Jan 2019 onward. On the 2,846 hours both cover (Jan-Feb 2019) the two sources are identical (MAE 0.0 MW, 100% exact), so mixing them adds no error. Temperature: Iowa Environmental Mesonet archive of NOAA ASOS reports, **KCLT** (Charlotte) for DUK and **KRDU** (Raleigh-Durham) for CPLE; each report is assigned to the nearest hour, gaps up to 3 hours are interpolated, longer gaps stay missing (a handful of hours: CPLE 24 missing in winter 2019, 4 missing temperature hours in each of 2020 and 2023). Nothing is zero-filled; rows with missing inputs are dropped from fitting and scoring.
+
+**Hour convention (a correction to earlier wording).** EIA labels each hour by the UTC time at its **end**: the API `period` equals the bulk files' "UTC Time at End of Hour" on every overlapping hour (and is off by about 332 MW if shifted by one hour). So the "07:00 EST" demand used throughout this project (20,879 MW DUK) is the hour ending 07:00, that is 06:00 to 07:00 local. It also fits the ORS report's "6:00 to 7:00 AM" peak. Effect on the district scaling: the NREL load profile was taken for 07:00-08:00; using the matching 06:00-07:00 hour changes D_NC08 from 1,686.3 to 1,686.7 MW and T_NC08 from 91.91 to 91.93 MW (immaterial; main-branch wording to be corrected).
+
+**Design, fixed before the holdout was scored (and never changed after).** Features: heating degree-hours (HDH = max(0, 65 F minus temperature)), hour-ending, weekend, US federal holiday (observed), holiday week (Dec 24 to Jan 1), linear trend. Baseline: ordinary least squares on those features. Boosted: scikit-learn `HistGradientBoostingRegressor` (fixed seed, no early stopping) on temperature, HDH, calendar features and HDH lagged 3 hours. Selection: **leave-one-winter-out cross-validation on the training pool only**; the boosted model replaces the baseline only if its mean CV MAPE is lower by at least 0.5 percentage points (prefer the simple model if close). Holdout: **all of Dec 2022 (local)** is excluded from every fit, every CV fold and the selection, and scored once afterwards. Jan-Feb 2023 stay in the training pool. A test poisons the holdout demand and checks that CV numbers and the chosen model do not move.
+
+**A bug found by a test, fixed after the first full run:** winter labels used the hour-end timestamp, so each winter held one stray Nov 30 hour and lacked its last Feb hour. This was a labeling error, not a modeling choice; the model design was not touched and the numbers moved by about 0.1 point or less.
+
+**Leave-one-winter-out CV (training pool, 8 folds):**
+
+| Model | DUK MAPE | CPLE MAPE | Mean MAPE | DUK MAE | CPLE MAE |
+|---|---|---|---|---|---|
+| Linear baseline | 5.03% | 7.88% | 6.45% | 619 MW | 561 MW |
+| Boosted | 3.51% | 5.28% | 4.40% | 444 MW | 399 MW |
+
+The gap (2.06 points) is well beyond the 0.5-point "close" threshold, so the **boosted model is the chosen one**, on CV evidence alone. Per-winter boosted MAPE ranges 2.9% to 3.9% (DUK) and 4.0% to 8.4% (CPLE; the worst fold is winter 2025).
+
+**Holdout, Dec 2022 (boosted; MAE in MW, MAPE in %, bias = predicted minus actual; "storm days" = Dec 23 to 25, defined in advance):**
+
+| Series | Slice | Hours | MAE | MAPE | Bias |
+|---|---|---|---|---|---|
+| DUK | all dec 2022 | 741 | 548 | 3.94% | -374 |
+| CPLE | all dec 2022 | 741 | 402 | 5.02% | -245 |
+| DUK+CPLE | all dec 2022 | 741 | 851 | 3.85% | -619 |
+| DUK+CPLE | dec 2022 excluding storm days | 669 | 756 | 3.61% | -543 |
+| DUK+CPLE | storm days dec 23 to 25 | 72 | 1,731 | 6.06% | -1,326 |
+
+**The Elliott morning (Dec 24, 2022, hour ending 07:00 EST, about 10 F at KCLT and KRDU), boosted model:** DUK actual 20,879 MW, predicted 17,711 (-15.2%); CPLE actual 12,711, predicted 11,658 (-8.3%); **DUK+CPLE actual 33,590 MW, predicted 29,369 MW, error -4,221 MW (-12.6%)**. (The linear model, not chosen, scores 5.73% MAPE on all of Dec 2022 and -15.0% on the Elliott morning.)
+
+**Honest reading.**
+- Overall the model passes the ~5% gate: holdout MAPE 3.85% for DUK+CPLE (3.94% DUK, 5.02% CPLE, just above 5% alone), and 3.61% on the non-storm days.
+- **It misses the Elliott morning badly**: it under-predicts by 4,221 MW (12.6%), and storm-day MAPE is 6.1% with a bias of -1,326 MW. Load shedding does not explain the miss, it makes it larger: shedding lowered the observed demand, so unconstrained demand was higher still (at most about 35,551 MW if the maxima of 1,000 and 961 MW are added back), and the model's shortfall against that would be about 17%.
+- **Cause, from training data alone (no holdout):** out-of-fold CV error by temperature bin (boosted, DUK+CPLE) is -8.1% below 20 F (only 109 hours of training data), -4.1% at 20-25 F, -2.7% at 25-30 F, and under 2% above 30 F. Extreme cold is rare in the data, and the model is biased low there (the linear baseline is worse: -14.5% below 20 F). The coldest training hour is 10.9 F at KCLT; the Elliott morning (about 10 F, after a rapid fall) is at or just beyond the edge.
+- Also unmodeled: the hour-before temperature trend (the fall was rapid), wind, and Christmas Eve behavior (Saturday plus holiday week are in the features, but there is no Christmas Eve-specific feature).
+
+**Limits.** Two single-city temperatures stand in for two large territories; CPLW (Progress West) is excluded; no wind, humidity, solar or behind-the-meter effects; demand during load shedding is observed demand, not unconstrained demand; one holdout month, so the holdout MAPE is a single-sample estimate. The shipped model is trained on the pool (Dec 2022 excluded).
+
+**Files.** `src/metric_grid/ingest/demand_history.py` (data), `src/metric_grid/train/demand.py` (features, models, protocol; scikit-learn, build time only), `data/frozen/demand_training.csv.gz`, `demand_training_report.json`, `demand_validation.json`, `tests/test_demand_model.py`; `make demand` rebuilds everything (network + EIA key), `make demand-train` retrains offline from the frozen table. scikit-learn is in `requirements-dev.txt` only: a boosted model would need a runtime dependency or a pickle, so an app panel would ship a precomputed curve instead.
+
 ## Data-source failures and fallbacks
 See
 ## Phase 1 data decisions and fallbacks (2026-10-18)
@@ -189,7 +232,7 @@ See
 ## Phase 2 data decisions and fallbacks (2026-10-18)
 
 - **Two balancing authorities cover NC-08, not one.** DUK (Duke Energy Carolinas, DEC) and Duke Energy Progress (DEP, EIA-930 respondents CPLE + CPLW). Both are far larger than NC-08, so district demand is estimated by scaling (see Phase 3 prerequisite section), never observed.
-- **EIA-930 series.** API v2 region-data, respondents DUK, CPLE and CPLW (one cached response each), type D, hourly, 2022-12-22 to 2022-12-26 (120 rows per respondent, no gaps). `period` is UTC; 07:00 local (EST) = 12:00 UTC. Check: demand peaks at 20,879 MW at 07:00 EST on 2022-12-24. The API was slow (~50 s) and returned one HTTP 504 during testing; the loader retries (4 attempts). The cached response is the output of the identical query. No bulk-CSV fallback was needed.
+- **EIA-930 series.** API v2 region-data, respondents DUK, CPLE and CPLW (one cached response each), type D, hourly, 2022-12-22 to 2022-12-26 (120 rows per respondent, no gaps; each hour is labelled by its END, see the demand-model section). `period` is UTC; 07:00 local (EST) = 12:00 UTC. Check: demand peaks at 20,879 MW at 07:00 EST on 2022-12-24. The API was slow (~50 s) and returned one HTTP 504 during testing; the loader retries (4 attempts). The cached response is the output of the identical query. No bulk-CSV fallback was needed.
 - **Observed demand caveat.** EIA demand at 07:00 is measured while DEC was already shedding load, so it is slightly below unconstrained demand. We use it as given (spec).
 - **Reduction ratios** are per group, see the Phase 3 prerequisite section: r_DEC = 1,000 / 20,879 = 0.0479; r_DEP = 961 / 13,986 = 0.0687. These are regional ratios; T_NC08 is computed from district-scaled load, never from regional MW.
 - **NREL data moved.** The `nrel-pds-building-stock` bucket now only holds `comstock/athena/`; the load-profile data lives in `oedi-data-lake` under `nrel-pds-building-stock/end-use-load-profiles-for-us-building-stock/2024/` (found by listing the bucket). Releases used: `resstock_amy2018_release_2`, `comstock_amy2018_release_2`, upgrade 0 (baseline).

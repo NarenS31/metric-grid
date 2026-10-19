@@ -36,6 +36,10 @@ Required reduction 91.9 MW (modeled district estimate), alpha 0.5, both plans cu
 
 ![Trade-off across alpha](docs/figures/alpha_tradeoff.png)
 
+## Winter demand model (branch `demand-model`, not yet in the app)
+
+A small model of winter hourly demand for the two Duke balancing authorities from temperature and calendar (EIA-930 and airport temperatures, eight winters), validated with leave-one-winter-out cross-validation and a held-out December 2022. **Modeled demand estimate; not a utility forecast; it does not predict outages or available supply.** Honest result: cross-validated error about 4.4% MAPE and 3.9% on all of Dec 2022, but it **under-predicts the Elliott morning by about 12.6%** (29,369 MW predicted vs 33,590 MW actual for DUK+CPLE), because extreme cold is rare in the training data. Details, the full protocol and every number are in `docs/ASSUMPTIONS.md` (section "Winter demand model"). `make demand-train` re-runs it offline.
+
 ## Honest limits
 
 - **Everything at district scale is modeled, not observed.** District load and the required reduction are scaled from two balancing-authority demand series with a weight built from housing units and jobs. The Elliott regional event anchors the scenario; NC-08 load and required reduction are modeled district-scale estimates, not observed utility values.
