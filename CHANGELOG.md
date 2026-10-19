@@ -15,3 +15,4 @@
 - Phase 6: README, VIDEO_SHOTLIST, REVIEWS template, per-file AI_DISCLOSURE, audit tests, demo locations (3 public buildings), zone 8 default, tooltips, empty/infeasible/missing-data states, `make demo`.
 - Housekeeping: example locations that illustrate differences (zone 23, zone 141, Robeson library); verified prior-work citations (NCUC removed); slider snaps to Elliott/10/15/20; requirements split and pinned; firmware folder deleted; spec amendments table; clean-clone skips noted.
 - Priority list is now frequency-based: high-vulnerability zones (SVI >= 0.75 or electric-heat >= 50%, in config) ranked by the share of the 200 load-only plans that cut them; card retitled; ASSUMPTIONS notes the vulnerability-aware plan is a single optimum.
+- Deployment prep: .python-version (3.11) for Streamlit Community Cloud; history checked for keys and private files.
