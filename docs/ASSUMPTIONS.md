@@ -123,6 +123,18 @@ Counties (share of MW cut): baseline Cabarrus 3 zones 45.3 MW (49%), Mecklenburg
 
 Compared with the cap OFF numbers (weighted: 88% of cuts in Union; vulnerability-weighted households 2,053; cost $271,958; +2,513 households), the cap moves the baseline AWAY from the high-SVI Anson zone (baseline vulnerability-weighted households 7,860 -> 5,556, cost $478,888 -> $556,726), so the gap in human harm narrows from -74% to -59%, while the weighted plan is only slightly worse in absolute terms (2,053 -> 2,266). The weighted plan still cuts more households. The cap is a sensitivity row (`county-share cap 50%`) in the sensitivity table; the pre-solved demo grid stays cap-OFF.
 
+## App (Phase 4 step 5; `make app`)
+
+- **Everything on the page is computed**: headline, honest line, flip-strip sentences, metrics and the robustness counts are built from model results and `data/frozen/` (tests compare the page text with the model output). The headline flips wording with the numbers: at alpha = 0 it reads "N MORE electric-heat households in the dark" and the honest line says "50% more vulnerability-weighted households".
+- **Honesty line.** The sentence from `scenarios.plain_summary`, which says "cuts N MORE households" when that is what the numbers say, sits directly under the headline in every state. Dollar figures are labeled "2013 dollars".
+- **Counts differ from the brief.** The robustness card computes its counts live from the sensitivity table: now 17 of 20 settings beat the baseline on human harm (the 3 that do not set alpha to 0), 20 of 20 on cost, 20 of 20 cut more households. (The brief said 16 of 19; the county-cap row made it 20 settings.)
+- **Pre-solved grid is now 40 records** (cap OFF and ON x 5 alphas x Elliott/10/15/20%), because the first capped live solve took 2.2 s and tripped the 2 s limit. Off-grid settings (the 7.5/12.5/17.5% slider stops) solve live; if that errors, is infeasible, or takes over 2 s the app shows the nearest pre-solved result with a visible note.
+- **Offline maps.** Streamlit's frontend falls back to Carto basemap tiles from the internet when no map style is given; a Playwright network log caught this. The maps use a blank inline style (a data: URL), and the browser check shows zero external requests. Maps have no basemap, so the zones and NC-08 outline are the only features.
+- **Rendering bug.** `line_width_units="pixels"` drew huge solid lines in this deck.gl version; the maps use `line_width_min_pixels`. Protected zones are drawn with real diagonal hatch lines (deck.gl has no fill patterns).
+- **Wording fix.** The brief's follow-up "request feeder data" contains a banned word, so the card says "request utility network data". The rule-4 sentence contains "circuit" and is shown verbatim, so the banned-word check exempts that exact sentence.
+- **Not built yet:** the fixed demo-location lookup and the node panel (nodes are disabled in config).
+- **Dev tooling:** Playwright is in `requirements-dev.txt` only (not needed to run the app); `scripts/app_screenshots.py` makes `docs/figures/app_*.png` at 1440 px wide (the page is taller than 900 px, so the viewport grows to the content height) and checks horizontal scroll, external requests, console errors and banned words.
+
 ## Data-source failures and fallbacks
 See
 ## Phase 1 data decisions and fallbacks (2026-10-18)

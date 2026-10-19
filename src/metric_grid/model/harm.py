@@ -61,8 +61,9 @@ def compute_harm(zones: pd.DataFrame, cfg: dict, kw_per_job: float, w_svi: float
                       "H_human is missing, they are excluded from normalization and cannot be selected.", MissingDataWarning)
     nodata_zero = z[z["svi_missing"] & (z["N_households"] == 0)] if "svi_missing" in z else z.iloc[0:0]
     if len(nodata_zero):
-        warnings.warn(f"zone_id {nodata_zero['zone_id'].tolist()} have no SVI but 0 occupied households, so H_human = 0 by "
-                      "definition (not a zero-fill); they are included in normalization as 0.", MissingDataWarning)
+        ids = ", ".join(str(i) for i in nodata_zero["zone_id"])
+        warnings.warn(f"Zone {ids} has no SVI data but 0 occupied households, so its H_human is 0 by definition (not a zero-fill); "
+                      "it is included in normalization as 0 and shown grey on the maps.", MissingDataWarning)
 
     z["H_econ"] = (z["N_households"] * c_res * h
                    + sum(z[col] * c_job[s] * h for s, col in SECTOR_COLS.items()) + z["jobs_other"] * c_job["other"] * h)

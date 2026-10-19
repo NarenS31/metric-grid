@@ -5,7 +5,7 @@ Scenarios: T at 10/15/20% of modeled NC-08 load. For each plan: zones cut in all
 import pandas as pd
 
 from metric_grid.model import harm, optimizer
-from metric_grid.model.optimizer import Infeasible, PairResult
+from metric_grid.model.optimizer import Infeasible, PairResult, PlanResult
 
 
 def plain_summary(r: PairResult) -> str:
@@ -19,7 +19,7 @@ def plain_summary(r: PairResult) -> str:
               f"cuts {abs(dh):,.0f} fewer households ({100 * dh / b.households:+.0f}%)" if dh < 0 else "cuts the same number of households")
     human_txt = f"{abs(human):.0f}% {'fewer' if human < 0 else 'more'} vulnerability-weighted households"
     econ_txt = f"{abs(econ):.0f}% {'lower' if econ < 0 else 'higher'} modeled interruption cost (2013 dollars)"
-    return f"The harm-weighted plan {people} than the load-only baseline, but {human_txt} and {econ_txt}."
+    return f"The vulnerability-aware plan {people} than the load-only baseline, but {human_txt} and {econ_txt}."
 
 
 def run_scenarios(zones: pd.DataFrame, cfg: dict, kw_per_job: float, d_nc08: float, alpha: float | None = None) -> dict:
@@ -57,28 +57,28 @@ def _plan_dict(p) -> dict:
 
 
 def presolve_grid(zones: pd.DataFrame, cfg: dict, kw_per_job: float, d_nc08: float, t_nc08: float) -> list[dict]:
-    """Demo safety net: solve both plans for alpha in the grid x (the Elliott target and each % preset) at default weights.
-
-    Written to data/frozen/ by `make freeze` (spec deviation: the spec solves at app start; the 10-20% presets take 2-3 s each).
-    """
+    """Demo safety net: solve both plans for alpha in the grid x (the Elliott target and each % preset), with the county cap
+    OFF and ON, at default weights. Written to data/frozen/ by `make freeze` (spec deviation: the spec solves at app start;
+    the 10-20% presets take 2-3 s each and the first capped solve can exceed the app's 2 s limit)."""
     o = cfg["optimizer"]
     zh = harm.compute_harm(zones, cfg, kw_per_job)
     targets = [("elliott", t_nc08)] + [(str(p), d_nc08 * p / 100) for p in o["target_pcts"]]
     out = []
-    for key, T in targets:
-        base_ids = None
-        for alpha in o["alpha_grid"]:
-            r = optimizer.solve(zh, T, alpha, band_pct=o["band_pct"], widen_pct=tuple(o["band_widen_pct"]),
-                                load_tol_mw=o["load_tol_mw"], baseline_ids=base_ids)
-            rec = {"target_key": key, "alpha": alpha, "target_mw": T}
-            if isinstance(r, Infeasible):
-                rec.update(solved=False, reason=r.reason, max_feasible_mw=r.max_feasible_mw)
-            else:
-                base_ids = r.baseline.zone_ids
-                rec.update(solved=True, band_lo_mw=r.band_lo_mw, band_hi_mw=r.band_hi_mw, delta_pct_used=r.delta_pct_used,
-                           widened=r.widened, baseline=_plan_dict(r.baseline), weighted=_plan_dict(r.weighted),
-                           zones_differ=r.zones_that_differ(), solve_seconds=r.solve_seconds, summary=plain_summary(r))
-            out.append(rec)
+    for cap in (None, o["county_cap"]["max_share"]):
+        for key, T in targets:
+            base_ids = None
+            for alpha in o["alpha_grid"]:
+                r = optimizer.solve(zh, T, alpha, band_pct=o["band_pct"], widen_pct=tuple(o["band_widen_pct"]),
+                                    load_tol_mw=o["load_tol_mw"], baseline_ids=base_ids, county_cap=cap)
+                rec = {"target_key": key, "alpha": alpha, "target_mw": T, "cap": cap is not None}
+                if isinstance(r, Infeasible):
+                    rec.update(solved=False, reason=r.reason, max_feasible_mw=r.max_feasible_mw)
+                else:
+                    base_ids = r.baseline.zone_ids if cap is None else None
+                    rec.update(solved=True, band_lo_mw=r.band_lo_mw, band_hi_mw=r.band_hi_mw, delta_pct_used=r.delta_pct_used,
+                               widened=r.widened, baseline=_plan_dict(r.baseline), weighted=_plan_dict(r.weighted),
+                               zones_differ=r.zones_that_differ(), solve_seconds=r.solve_seconds, summary=plain_summary(r))
+                out.append(rec)
     return out
 
 
@@ -89,3 +89,21 @@ def county_breakdown(zones: pd.DataFrame, plan) -> pd.DataFrame:
                                 mean_svi=("RPL_THEMES", "mean"))
     g["share_of_cut"] = g["mw"] / g["mw"].sum()
     return g.sort_values("mw", ascending=False)
+
+
+def pair_to_record(r: PairResult, target_key: str, alpha: float, cap: bool = False) -> dict:
+    """Plain-dict form of a solved pair (same shape as presolved.json records), for caching and JSON."""
+    return {"target_key": target_key, "alpha": alpha, "target_mw": r.target_mw, "cap": cap, "solved": True, "band_lo_mw": r.band_lo_mw,
+            "band_hi_mw": r.band_hi_mw, "delta_pct_used": r.delta_pct_used, "widened": r.widened,
+            "baseline": _plan_dict(r.baseline), "weighted": _plan_dict(r.weighted), "zones_differ": r.zones_that_differ(),
+            "solve_seconds": r.solve_seconds, "summary": plain_summary(r)}
+
+
+def record_to_pair(rec: dict) -> PairResult:
+    """Rebuild a PairResult from a solved record (presolved.json or pair_to_record)."""
+    def plan(name, d):
+        return PlanResult(name, list(d["zone_ids"]), d["mw_shed"], d["overshed_mw"], len(d["zone_ids"]), d["households"],
+                          d["electric_heat_households"], d["jobs"], d["h_human"], d["h_econ"])
+    return PairResult(rec["target_mw"], rec["band_lo_mw"], rec["band_hi_mw"], rec["delta_pct_used"], rec["widened"], rec["alpha"],
+                      plan("load-only baseline", rec["baseline"]), plan("harm-weighted plan", rec["weighted"]),
+                      rec.get("solve_seconds", 0.0))

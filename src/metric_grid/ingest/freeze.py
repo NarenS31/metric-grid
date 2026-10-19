@@ -31,6 +31,7 @@ DATASETS = [  # provenance list for the app's drawer (vintage per source; full n
     {"name": "NREL End-Use Load Profiles, ResStock/ComStock AMY2018 release 2 (cold week 2018-01-01..07)", "vintage": "2024 release", "url": "https://oedi-data-lake.s3.amazonaws.com/nrel-pds-building-stock/end-use-load-profiles-for-us-building-stock/2024/"},
     {"name": "SC Office of Regulatory Staff, DEC/DEP December 2022 outage report (shed amounts)", "vintage": "2023", "url": "https://ors.sc.gov/"},
     {"name": "FERC-NERC staff report on Winter Storm Elliott (shed amounts)", "vintage": "Nov 2023", "url": "https://www.ferc.gov/sites/default/files/2024-02/24_Winter-Storm_Elliot_0207_UPDATE.pdf"},
+    {"name": "LBNL interruption cost estimates (ICE Calculator 2.0 report LBNL-6941E), 2013 dollars", "vintage": "2015", "url": "https://eta-publications.lbl.gov/sites/default/files/lbnl-6941e.pdf"},
     {"name": "KCLT ASOS temperature via Iowa Environmental Mesonet (display only)", "vintage": "2022-12-23..25", "url": "https://mesonet.agron.iastate.edu/"},
 ]
 
@@ -131,6 +132,10 @@ def write_model_outputs(cfg: dict, zones: gpd.GeoDataFrame, kw_per_job: float, c
     _dump("scenarios.json", {"rows": sc["rows"].to_dict("records"), "cut_in_all": sc["cut_in_all"], "only_worst": sc["only_worst"],
                              "worst_pct": sc["worst_pct"]})
     _dump("alpha_sweep.json", sens.alpha_sweep(z, cfg, kw_per_job, D, T).to_dict("records"))
+    from metric_grid import figures  # matplotlib, only needed at freeze time
+
+    figures.alpha_tradeoff_figure(FROZEN / "alpha_tradeoff.png")
+    figures.alpha_tradeoff_figure()  # docs copy
 
 
 if __name__ == "__main__":

@@ -22,6 +22,8 @@ UI copy rules: every dollar figure is labeled "2013 dollars". Anywhere vulnerabi
 
 Every map draws the NC-08 district outline (data/frozen/district.geojson). Amendments to docs/SPEC.md live in this file and docs/ASSUMPTIONS.md.
 
+Run the app with `make app` (port 8765); screenshots with `scripts/app_screenshots.py` (needs requirements-dev.txt). If the app looks stale after a code change, kill whatever holds port 8765 first.
+
 ## Stack
 Python 3.11+, Streamlit, GeoPandas, shapely, scipy, PuLP (CBC), pandas, pyarrow, pydeck, pytest, requests, pyyaml. Node (later): FastAPI + SQLite, httpx, python-kasa, ESP32 Feather V2 firmware. Make targets: data, freeze, test, app, demo, api. Ask before adding anything else.
 

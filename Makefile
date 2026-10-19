@@ -11,8 +11,8 @@ freeze:    ## Phase 3: write data/frozen/ (the only runtime inputs); run `make d
 test:
 	$(PY) -m pytest -q
 
-app:       ## Phase 4
-	@echo "TODO: not implemented (Phase 4)"; exit 1
+app:       ## Phase 4: run the Streamlit app (reads only data/frozen/, works offline)
+	PYTHONPATH=src $(PY) -m streamlit run src/metric_grid/app/streamlit_app.py --server.port 8765
 
 demo:      ## Phase 6: load frozen scenario and open the app
 	@echo "TODO: not implemented (Phase 6)"; exit 1

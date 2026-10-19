@@ -141,21 +141,3 @@ def test_area_join_with_zones_equal_tracts_is_identity():
     assert out["jobs_total"].to_numpy() == pytest.approx(t["jobs_total"].to_numpy(), rel=1e-4)
     both_nan = out["RPL_THEMES"].isna().to_numpy() == t["RPL_THEMES"].isna().to_numpy()
     assert both_nan.all()
-
-
-# ---------- offline ----------
-
-def test_app_renders_with_network_disabled(monkeypatch):
-    """The app must import and render with every network call blocked (spec rule 8)."""
-    from streamlit.testing.v1 import AppTest
-
-    def blocked(*a, **k):
-        raise AssertionError("network access attempted")
-
-    monkeypatch.setattr(socket.socket, "connect", blocked)
-    monkeypatch.setattr(socket, "create_connection", blocked)
-    monkeypatch.setattr(socket, "getaddrinfo", blocked)
-    at = AppTest.from_file(str(ROOT / "src" / "metric_grid" / "app" / "streamlit_app.py"), default_timeout=60).run()
-    assert not at.exception, at.exception
-    assert "Same target, different burden." in [s.value for s in at.subheader]
-    assert any("modeled district-scale estimates" in i.value for i in at.info)

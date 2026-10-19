@@ -157,15 +157,26 @@ def test_real_default_summary_states_the_more_households_fact(consts):
 
 def test_presolved_grid_complete_and_matches_live_solve(consts):
     g = frozen.load_presolved()
-    assert len(g) == 20 and {r["target_key"] for r in g} == {"elliott", "10", "15", "20"}
-    assert sorted({r["alpha"] for r in g}) == [0, 0.25, 0.5, 0.75, 1] and all(r["solved"] for r in g)
+    assert len(g) == 40 and {r["cap"] for r in g} == {False, True}
+    off = [r for r in g if not r["cap"]]
+    assert len(off) == 20 and {r["target_key"] for r in off} == {"elliott", "10", "15", "20"}
+    assert sorted({r["alpha"] for r in off}) == [0, 0.25, 0.5, 0.75, 1] and all(r["solved"] for r in g)
     for r in g:
         for plan in ("baseline", "weighted"):
             assert r["band_lo_mw"] - 1e-9 <= r[plan]["mw_shed"] <= r["band_hi_mw"] + 1e-9
     z = frozen.load_zones()
     live = optimizer.solve(harm.compute_harm(z, CFG, consts["kw_per_job"]), consts["T_NC08_mw"], 0.5)
-    rec = [r for r in g if r["target_key"] == "elliott" and r["alpha"] == 0.5][0]
+    rec = [r for r in off if r["target_key"] == "elliott" and r["alpha"] == 0.5][0]
     assert rec["weighted"]["zone_ids"] == live.weighted.zone_ids and rec["baseline"]["zone_ids"] == live.baseline.zone_ids
+
+
+def test_presolved_cap_records_respect_the_county_cap():
+    zh = harm.compute_harm(frozen.load_zones(), CFG, frozen.load_constants()["kw_per_job"]).set_index("zone_id")
+    for rec in [r for r in frozen.load_presolved() if r["cap"] and r["alpha"] == 0.5]:
+        for plan in ("baseline", "weighted"):
+            t = zh.loc[rec[plan]["zone_ids"]]
+            by_county = t.groupby("COUNTY")["L_mw"].sum()
+            assert by_county.max() <= 0.5 * by_county.sum() + 1e-6
 
 
 def test_alpha_sweep_rows_and_figure_exist():

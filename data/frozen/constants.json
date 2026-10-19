@@ -1,5 +1,5 @@
 {
-  "built_utc": "2026-10-19T03:23:40+00:00",
+  "built_utc": "2026-10-19T03:47:52+00:00",
   "scenario": {
     "name": "Winter Storm Elliott, Dec 24 2022, 07:00",
     "date": "2022-12-24",
@@ -156,6 +156,11 @@
       "name": "FERC-NERC staff report on Winter Storm Elliott (shed amounts)",
       "vintage": "Nov 2023",
       "url": "https://www.ferc.gov/sites/default/files/2024-02/24_Winter-Storm_Elliot_0207_UPDATE.pdf"
+    },
+    {
+      "name": "LBNL interruption cost estimates (ICE Calculator 2.0 report LBNL-6941E), 2013 dollars",
+      "vintage": "2015",
+      "url": "https://eta-publications.lbl.gov/sites/default/files/lbnl-6941e.pdf"
     },
     {
       "name": "KCLT ASOS temperature via Iowa Environmental Mesonet (display only)",
