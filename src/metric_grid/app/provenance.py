@@ -12,7 +12,7 @@ UI_SOURCES = {
     "Jobs": ("LODES count", ["LEHD LODES"]),
     "Interruption cost (2013 dollars)": ("modeled", ["LBNL"]),
     "Protected zones": ("OpenStreetMap points; coverage incomplete", ["OpenStreetMap"]),
-    "Reduction ratio r (1,000 MW and 961 MW sheds)": ("sourced, regional", ["SC Office of Regulatory Staff", "FERC-NERC"]),
+    "Reduction ratio r (each utility's maximum firm load shed, MW)": ("sourced, regional", ["SC Office of Regulatory Staff", "FERC-NERC"]),
     "Zone boundaries": ("census tract zones, not utility boundaries", ["Census TIGER"]),
     "Harm weights, alpha, band width, county cap": ("judgment calls set in config.yaml", []),
 }

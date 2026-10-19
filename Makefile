@@ -14,8 +14,11 @@ test:
 app:       ## Phase 4: run the Streamlit app (reads only data/frozen/, works offline)
 	PYTHONPATH=src $(PY) -m streamlit run src/metric_grid/app/streamlit_app.py --server.port 8765
 
-demo:      ## Phase 6: load frozen scenario and open the app
-	@echo "TODO: not implemented (Phase 6)"; exit 1
+HEADLESS ?= false   # `make demo HEADLESS=true` does not open a browser (used by the clean-clone check)
+
+demo:      ## open the app on the frozen scenario (offline; needs only data/frozen/ and the installed packages)
+	@test -f data/frozen/constants.json || (echo "data/frozen/ is missing: restore it from the repository or run make data && make freeze"; exit 1)
+	PYTHONPATH=src $(PY) -m streamlit run src/metric_grid/app/streamlit_app.py --server.port 8765 --server.headless $(HEADLESS)
 
 api:       ## Phase 5 (optional node)
 	@echo "TODO: not implemented (Phase 5)"; exit 1

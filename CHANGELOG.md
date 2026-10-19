@@ -12,3 +12,4 @@
 - Phase 4.3-4.4: sensitivity (19 settings, always/sometimes/never), scenarios 10/15/20%, alpha sweep + alpha_tradeoff.png, pre-solved grid and model outputs written at `make freeze` (spec deviation, approved), plain-language honesty summary.
 - Optional county-share cap (default OFF) with tests and a sensitivity row; priority-list definition (baseline-cut zones spared in every alpha>0 setting) added to sensitivity outputs.
 - Phase 4.5: Streamlit app (two pydeck maps, flip strip, priority list, zone detail, robustness card, methods drawer), offline blank map style, pre-solved grid with cap on/off (40 records), app tests, Playwright screenshots.
+- Phase 6: README, VIDEO_SHOTLIST, REVIEWS template, per-file AI_DISCLOSURE, audit tests, demo locations (3 public buildings), zone 8 default, tooltips, empty/infeasible/missing-data states, `make demo`.

@@ -80,8 +80,14 @@ def get_view(alpha: float, pct: float, cap_on: bool) -> dict:
     if "record" in live and live["elapsed"] <= SLOW_SECONDS:
         return {"pair": scenarios.record_to_pair(live["record"]), "source": "live", "note": None, "cap_applied": cap is not None}
     near = nearest_presolved(alpha, target, consts, A["presolved"], cap is not None)
+    infeasible = "infeasible" in live
     why = (f"the live solve took {live['elapsed']:.1f} s" if "record" in live else live.get("infeasible") or live.get("error"))
     cap_txt = " The county cap is not applied in the pre-computed result." if cap is not None and not near["cap"] else ""
-    note = (f"Showing nearest pre-computed setting (alpha {near['alpha']:.2f}, "
-            f"{near['target_mw']:.0f} MW target) because {why}.{cap_txt}")
-    return {"pair": scenarios.record_to_pair(near), "source": "nearest", "note": note, "cap_applied": bool(near["cap"])}
+    if infeasible:
+        note = (f"This target cannot be met: {why} (maximum feasible reduction {live['max_feasible_mw']:.1f} MW). "
+                f"Showing the nearest pre-computed setting (alpha {near['alpha']:.2f}, {near['target_mw']:.0f} MW target).{cap_txt}")
+    else:
+        note = (f"Showing nearest pre-computed setting (alpha {near['alpha']:.2f}, "
+                f"{near['target_mw']:.0f} MW target) because {why}.{cap_txt}")
+    return {"pair": scenarios.record_to_pair(near), "source": "nearest", "note": note, "cap_applied": bool(near["cap"]),
+            "infeasible": infeasible}

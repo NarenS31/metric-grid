@@ -30,6 +30,9 @@ h1, h2, h3, .serif {{ font-family: Georgia, "Times New Roman", serif !important;
 .sw {{ display:inline-block; width:.95rem; height:.95rem; border-radius:3px; vertical-align:middle; margin-right:.3rem; border:1px solid #0002; }}
 .flip {{ font-size:.86rem; line-height:1.35; padding:.35rem 0; border-bottom:1px solid var(--line); }}
 .flipcol h4 {{ font-family:Georgia,serif; margin:.2rem 0 .4rem 0; font-size:1.05rem; }}
+.tip {{ border-bottom:1px dotted var(--muted); cursor:help; }}
+.note.warn {{ background:#FFF3E0; border-color:#F2C98A; }}
+.cap {{ color:var(--muted); font-size:.84rem; margin:.3rem 0; }}
 .badge {{ display:inline-block; padding:.12rem .55rem; border-radius:6px; font-size:.72rem; background:#EFE9DD; margin-right:.3rem; }}
 .badge.v {{ background:#E9E2FB; color:#3B2A92; }}
 table.t {{ border-collapse:collapse; width:100%; font-size:.84rem; }}

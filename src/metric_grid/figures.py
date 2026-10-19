@@ -69,30 +69,35 @@ def zone_map_figure(out_path=ROOT / "docs" / "figures" / "zone_map_L.png") -> No
     fig.savefig(out_path, dpi=130)
 
 
-def alpha_tradeoff_figure(out_path=ROOT / "docs" / "figures" / "alpha_tradeoff.png") -> None:
+def alpha_tradeoff_figure(out_path=ROOT / "docs" / "figures" / "alpha_tradeoff.png", compact: bool = False) -> None:
     """Percent change of the harm-weighted plan vs the load-only baseline across alpha. Reads data/frozen only.
 
     Shows the households-cut change next to the harm numbers: the weighted plan cuts MORE households at every alpha.
+    compact=True makes a narrower figure with larger type, for the app's card.
     """
     import pandas as pd
 
     from metric_grid import frozen
 
     df = pd.DataFrame(frozen.load_alpha_sweep())
-    fig, ax = plt.subplots(figsize=(9, 5.2))
+    fs = 11 if compact else 8
+    fig, ax = plt.subplots(figsize=(6.2, 5.6) if compact else (9, 5.2))
     ax.axhline(0, color="black", lw=0.8)
-    ax.plot(df["alpha"], df["human_change_pct"], marker="o", color="#0072B2", lw=2.2, label="Vulnerability-weighted households cut")
-    ax.plot(df["alpha"], df["econ_change_pct"], marker="s", color="#E69F00", lw=2.2, label="Interruption cost (2013 dollars)")
+    ax.plot(df["alpha"], df["human_change_pct"], marker="o", color="#0072B2", lw=2.4, label="Vulnerability-weighted households cut")
+    ax.plot(df["alpha"], df["econ_change_pct"], marker="s", color="#E69F00", lw=2.4, label="Interruption cost (2013 dollars)")
     ax.plot(df["alpha"], df["households_change_pct"], marker="^", color="#555555", lw=1.8, ls="--", label="Households cut (all households)")
     for _, r in df.iterrows():
         ax.annotate(f"{r['households_change']:+,.0f} hh", (r["alpha"], r["households_change_pct"]), textcoords="offset points",
-                    xytext=(0, 8), ha="center", fontsize=8, color="#555555")
+                    xytext=(0, 9), ha="center", fontsize=fs, color="#555555")
     ax.set_xticks(df["alpha"])
-    ax.set_xlabel("alpha   (0 = economic cost only  <->  1 = human harm only)")
-    ax.set_ylabel("Harm-weighted plan vs load-only baseline (%)")
-    ax.set_title("Same MW target, different burden (modeled)\nBelow zero = less modeled harm; the weighted plan cuts MORE households at every alpha",
-                 fontsize=10)
-    ax.legend(loc="upper right", fontsize=8)
+    ax.margins(x=0.14)  # room for the end labels
+    ax.tick_params(labelsize=fs)
+    ax.set_xlabel("alpha (0 = cost only, 1 = human harm only)" if compact else "alpha   (0 = economic cost only  <->  1 = human harm only)", fontsize=fs)
+    ax.set_ylabel("Vulnerability-aware plan vs baseline (%)" if compact else "Harm-weighted plan vs load-only baseline (%)", fontsize=fs)
+    title = ("Below zero = less modeled harm.\nThe plan cuts MORE households at every alpha." if compact else
+             "Same MW target, different burden (modeled)\nBelow zero = less modeled harm; the weighted plan cuts MORE households at every alpha")
+    ax.set_title(title, fontsize=fs + 1)
+    ax.legend(loc="upper right", fontsize=fs - 1 if compact else fs)
     ax.grid(alpha=0.25)
     fig.tight_layout()
     out_path.parent.mkdir(parents=True, exist_ok=True)

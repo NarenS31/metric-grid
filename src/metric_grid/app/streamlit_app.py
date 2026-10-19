@@ -7,7 +7,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # src/, so `stream
 import pandas as pd
 import streamlit as st
 
-from metric_grid.app import copy, data, maps, provenance, theme
+from metric_grid.app import copy, data, lookup, maps, provenance, theme
 from metric_grid.config import ROOT
 from metric_grid.model import harm
 from metric_grid.model.optimizer import PlanResult
@@ -16,13 +16,20 @@ from metric_grid.model.scenarios import county_breakdown, plain_summary
 st.set_page_config(page_title="METRIC-Grid", page_icon=None, layout="wide", initial_sidebar_state="collapsed")
 st.markdown(theme.CSS, unsafe_allow_html=True)
 
-A = data.load_all()
+try:
+    A = data.load_all()
+except (FileNotFoundError, OSError) as exc:  # missing-data state: say exactly what to do, never a stack trace
+    st.markdown("<div class='eyebrow'>METRIC-Grid</div><div class='headline'>The frozen data is missing.</div>", unsafe_allow_html=True)
+    st.error(f"The app reads only the files in data/frozen/ and could not open them ({exc}). "
+             "Run `make data` and `make freeze` (needs network and API keys once), or restore data/frozen/ from the repository.")
+    st.stop()
 cfg, consts, zones, zh = A["cfg"], A["consts"], A["zones"], A["zh"]
+TOP_ZONE = int(A["sens"]["priority_list"][0]["zone_id"])  # the top "where to plan first" zone opens in the detail card
 cap_share = cfg["optimizer"]["county_cap"]["max_share"]
 PCTS = data.pct_options(consts, cfg)
 ALPHAS = cfg["optimizer"]["alpha_grid"]
 ELLIOTT_PCT = PCTS[0]
-DEFAULTS = {"pct": ELLIOTT_PCT, "alpha": cfg["harm"]["alpha_default"], "cap": False, "zone": 0}
+DEFAULTS = {"pct": ELLIOTT_PCT, "alpha": cfg["harm"]["alpha_default"], "cap": False, "zone": TOP_ZONE}
 
 
 def _snap(value: float, options: list) -> float:
@@ -38,7 +45,7 @@ def init_state() -> None:
     s["pct"] = _snap(float(q["pct"]), PCTS) if "pct" in q else DEFAULTS["pct"]
     s["alpha"] = _snap(float(q["alpha"]), ALPHAS) if "alpha" in q else DEFAULTS["alpha"]
     s["cap"] = q.get("cap") == "1"
-    s["zone"] = int(q["zone"]) if "zone" in q and str(q["zone"]).isdigit() else 0
+    s["zone"] = int(q["zone"]) if "zone" in q and str(q["zone"]).isdigit() else TOP_ZONE
     s["init"] = True
 
 
@@ -59,8 +66,8 @@ def plan_metrics(p: PlanResult) -> str:
         metric("MW cut", f"{p.mw_shed:.1f}", f"{p.overshed_mw:.2f} MW over target"),
         metric("Households cut", f"{p.households:,.0f}", f"{p.n_zones} zones"),
         metric("Electric-heat households cut", f"{p.electric_heat_households:,.0f}", "ACS estimate"),
-        metric("Vulnerability-weighted households", f"{p.h_human:,.0f}", "households × index"),
-        metric("Interruption cost", copy.dollars(p.h_econ), "2013 dollars, 1 hour"),
+        metric("Vulnerability-weighted households", f"{p.h_human:,.0f}", f"households × {copy.tip('SVI', 'SVI')}-based index"),
+        metric(copy.tip("Interruption cost", "ICE"), copy.dollars(p.h_econ), "2013 dollars, 1 hour"),
         metric("Jobs in cut zones", f"{p.jobs:,.0f}", "LODES count"),
     ]
     return "<div style='display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem 1rem'>" + "".join(cells) + "</div>"
@@ -104,19 +111,19 @@ with left:
         st.markdown(f"<p class='scaling'>Data note: {w}</p>", unsafe_allow_html=True)
 
 if view["note"]:
-    st.markdown(f"<div class='note'>{view['note']}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='note{' warn' if view.get('infeasible') else ''}'>{view['note']}</div>", unsafe_allow_html=True)
 
 # ---------------------------------------------------------------- 5. two maps
 vs = maps.view_state(A["district"])
 district_gj = A["district"].__geo_interface__
 hatch = st.cache_resource(lambda: maps.hatch_features(zones))()
 st.markdown(
-    "<div class='legend'><span><span class='sw' style='background:#F0EBFC'></span>low SVI (kept on)</span>"
-    "<span><span class='sw' style='background:#4628AA'></span>high SVI (kept on)</span>"
+    f"<div class='legend'><span><span class='sw' style='background:#F0EBFC'></span>low {copy.tip('SVI', 'SVI')} (kept on)</span>"
+    f"<span><span class='sw' style='background:#4628AA'></span>high {copy.tip('SVI', 'SVI')} (kept on)</span>"
     "<span><span class='sw' style='background:#16121F'></span>cut</span>"
     "<span><span class='sw' style='background:repeating-linear-gradient(45deg,#fff,#fff 2px,#1C1A24 2px,#1C1A24 3px)'></span>"
     "hatched outline = protected, never cut</span>"
-    "<span><span class='sw' style='background:#CDC8D7'></span>no SVI data</span>"
+    f"<span><span class='sw' style='background:#CDC8D7'></span>no {copy.tip('SVI', 'SVI')} data</span>"
     "<span><span class='sw' style='background:transparent;border:2px solid #5B3FD6'></span>NC-08 outline (tracts shown whole)</span></div>",
     unsafe_allow_html=True)
 mc1, mc2 = st.columns(2, gap="medium")
@@ -128,9 +135,10 @@ for col, title, sub, plan in ((mc1, "Load-only baseline", "Cuts the least MW abo
         st.pydeck_chart(maps.build_deck(fc, hatch, district_gj, vs), height=500)
         st.markdown(plan_metrics(plan), unsafe_allow_html=True)
 band_txt = f"Both plans cut between {r.band_lo_mw:.1f} and {r.band_hi_mw:.1f} MW"
-band_txt += f" (band widened to {r.delta_pct_used:.0f}% to find a solution)." if r.widened else f" (target plus {r.delta_pct_used:.0f}%)."
+band_word = copy.tip("target band", "target band", cfg)
+band_txt += f" ({band_word} widened to {r.delta_pct_used:.0f}% to find a solution)." if r.widened else f" ({band_word}: target plus {r.delta_pct_used:.0f}%)."
 cap_txt = f" No county takes more than {cap_share:.0%} of either plan's cut." if view["cap_applied"] else ""
-st.caption(band_txt + cap_txt + " Cost is in 2013 dollars.")
+st.markdown(f"<p class='cap'>{band_txt}{cap_txt} Cost is in 2013 dollars.</p>", unsafe_allow_html=True)
 
 cb1, cb2 = st.columns(2, gap="medium")
 for col, plan in ((cb1, r.baseline), (cb2, r.weighted)):
@@ -165,7 +173,7 @@ with c1, st.container(border=True):
         f"<tr><td>{p['zone_id']}</td><td>{p['COUNTY'].replace(' County', '')}</td><td>{p['RPL_THEMES']:.2f}</td>"
         f"<td>{p['share_electric_heat']:.0%}</td><td>{p['occupied_units']:,.0f}</td>"
         f"<td>{'cut at alpha 0' if p['cut_at_alpha0'] else ''}</td></tr>" for p in sens["priority_list"])
-    st.markdown("<table class='t'><tr><th>Zone</th><th>County</th><th>SVI</th><th>Electric heat</th><th>Households</th><th>Note</th></tr>"
+    st.markdown(f"<table class='t'><tr><th>Zone</th><th>County</th><th>{copy.tip('SVI', 'SVI')}</th><th>Electric heat</th><th>Households</th><th>Note</th></tr>"
                 f"{body}</table>", unsafe_allow_html=True)
     st.markdown("<p class='scaling' style='margin-top:.5rem'><b>This is what the model spares across settings, not a finding about "
                 "specific neighborhoods.</b> Follow-ups to consider: outreach, backup-power planning, resilience-hub siting, "
@@ -190,7 +198,8 @@ with c2, st.container(border=True):
         def status(p: PlanResult) -> str:
             return "CUT" if zid in p.zone_ids else ("protected, never cut" if z["protected"] else "kept on")
 
-        badges = "<span class='badge'>census tract zone</span><span class='badge v'>load: modeled</span>" + \
+        badges = f"<span class='badge'>{copy.tip('census tract zone', 'census tract zone')}</span>" \
+                 f"<span class='badge v'>{copy.tip('load: modeled', 'modeled')}</span>" + \
                  ("<span class='badge'>protected</span>" if z["protected"] else "")
         st.markdown(badges, unsafe_allow_html=True)
         svi = "n/a (no data)" if pd.isna(z["RPL_THEMES"]) else f"{z['RPL_THEMES']:.3f}"
@@ -208,6 +217,15 @@ with c2, st.container(border=True):
         st.code(code, language=None, wrap_lines=True)
     else:
         st.caption("Select a zone to see its inputs and the harm formula with its numbers substituted.")
+
+with c2, st.container(border=True):
+    st.markdown("<div class='serif' style='font-size:1.2rem;font-weight:700'>Demo locations</div>", unsafe_allow_html=True)
+    st.markdown("<p class='scaling'>Three fixed public buildings (no home addresses, no live geocoder). Status is for the census "
+                "tract zone the building sits in, under the current controls.</p>", unsafe_allow_html=True)
+    lrows = lookup.lookup_rows(zones, cfg["demo_locations"], r)
+    st.markdown("<table class='t'><tr><th>Location</th><th>Zone</th><th>Baseline</th><th>Vulnerability-aware</th></tr>" + "".join(
+        f"<tr><td>{x['label']}</td><td>{x['zone_id']}</td><td>{x['baseline']}</td><td>{x['weighted']}</td></tr>" for x in lrows)
+        + "</table>", unsafe_allow_html=True)
 
 with c3, st.container(border=True):
     st.markdown("<div class='serif' style='font-size:1.2rem;font-weight:700'>How robust is this?</div>", unsafe_allow_html=True)
@@ -244,7 +262,8 @@ with st.expander("Methods & sources"):
                 f"{consts['D_NC08_mw']:,.0f} MW; required reduction T_NC08 = {consts['T_NC08_mw']:.1f} MW.")
     st.markdown(f"**Reduction ratio r.** {consts['r_definition']}. r (Carolinas) = {g['DEC']['r']:.4f}, r (Progress) = {g['DEP']['r']:.4f}.")
     st.markdown(f"**Shared target band.** Both plans must cut between T and T + delta, delta = {cfg['optimizer']['band_pct']:.0f}% of T "
-                "(widened to at most 5% if needed): load is shed in discrete blocks and operators cannot hit an exact MW.")
+                f"(widened to at most {max(cfg['optimizer']['band_widen_pct']):.0f}% if needed): load is shed in discrete blocks and operators cannot "
+                "hit an exact MW.")
     st.markdown(f"**Protected facilities.** Zones containing a hospital, nursing home or water treatment plant are never cut "
                 f"({consts['n_protected']} zones). This may protect more modeled load than necessary, and the OpenStreetMap facility "
                 "data may be incomplete. Fire and police stations are not excluded (they commonly have backup generation).")

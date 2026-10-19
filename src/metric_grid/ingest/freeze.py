@@ -134,7 +134,7 @@ def write_model_outputs(cfg: dict, zones: gpd.GeoDataFrame, kw_per_job: float, c
     _dump("alpha_sweep.json", sens.alpha_sweep(z, cfg, kw_per_job, D, T).to_dict("records"))
     from metric_grid import figures  # matplotlib, only needed at freeze time
 
-    figures.alpha_tradeoff_figure(FROZEN / "alpha_tradeoff.png")
+    figures.alpha_tradeoff_figure(FROZEN / "alpha_tradeoff.png", compact=True)
     figures.alpha_tradeoff_figure()  # docs copy
 
 

@@ -170,3 +170,96 @@ def test_nearest_prefers_same_cap_setting():
     A = data.load_all()
     near = data.nearest_presolved(0.4, 100.0, A["consts"], A["presolved"], cap=True)
     assert near["cap"] is True
+
+
+# ---------------- Phase 6: default zone, demo locations, tooltips, empty / infeasible / missing-data states ----------------
+
+def test_zone_detail_opens_on_top_priority_zone_by_default(default_page):
+    top = frozen.load_sensitivity()["priority_list"][0]["zone_id"]
+    assert top == 8
+    text = page_text(default_page)
+    assert f"**Zone {top}**" in text and "H_human = N x (0.7 x SVI + 0.3 x heat)" in text
+
+
+def test_zone_detail_empty_state_when_no_zone_selected():
+    at = AppTest.from_file(APP, default_timeout=120)
+    at.query_params["zone"] = "0"
+    at.run()
+    assert not at.exception and "Select a zone to see its inputs and the harm formula" in page_text(at)
+
+
+def test_demo_locations_each_inside_a_zone_of_the_right_county():
+    from metric_grid.app import lookup
+    from metric_grid.config import load_config
+    z = frozen.load_zones()
+    locs = load_config()["demo_locations"]
+    assert len(locs) == 3 and {l["county"] for l in locs} == {"Union", "Robeson", "Cabarrus"}
+    for loc in locs:
+        zid = lookup.locate(z, loc["lat"], loc["lon"])
+        assert zid is not None
+        assert z.loc[z["zone_id"] == zid, "COUNTY"].iloc[0] == f"{loc['county']} County"
+        assert "home" not in loc["label"].lower() and "residence" not in loc["label"].lower()
+
+
+def test_locate_and_status_edge_cases():
+    from metric_grid.app import lookup
+    z = frozen.load_zones()
+    assert lookup.locate(z, 0.0, 0.0) is None and lookup.status(z, None, scenarios.record_to_pair(frozen.load_presolved()[0]).baseline) == "outside NC-08 zones"
+    prot = int(z.loc[z["protected"], "zone_id"].iloc[0])
+    pair = scenarios.record_to_pair(frozen.load_presolved()[0])
+    assert lookup.status(z, prot, pair.weighted) == "protected, never cut"
+    cut = pair.weighted.zone_ids[0]
+    assert lookup.status(z, cut, pair.weighted) == "CUT"
+
+
+def test_demo_location_table_shows_status_under_both_plans(default_page):
+    from metric_grid.app import lookup
+    from metric_grid.config import load_config
+    text = page_text(default_page)
+    rec = [r for r in frozen.load_presolved() if r["target_key"] == "elliott" and r["alpha"] == 0.5 and not r["cap"]][0]
+    pair = scenarios.record_to_pair(rec)
+    for row in lookup.lookup_rows(frozen.load_zones(), load_config()["demo_locations"], pair):
+        assert f"<td>{row['label']}</td><td>{row['zone_id']}</td><td>{row['baseline']}</td><td>{row['weighted']}</td>" in text
+
+
+def test_tooltips_for_svi_ice_census_tract_zone_and_target_band(default_page):
+    html = "\n".join(m.value for m in default_page.markdown)
+    for key, needle in (("SVI", "Social Vulnerability Index"), ("ICE", "Interruption Cost Estimate"),
+                        ("census tract zone", "not a utility service boundary"), ("target band", "operators cannot hit an exact MW")):
+        assert re.search(rf"class='tip' title=\"[^\"]*{re.escape(needle)}", html), key
+
+
+def test_infeasible_target_shows_explanation_and_nearest_result(monkeypatch):
+    from metric_grid.app import data
+    monkeypatch.setattr(data, "_live_solve", lambda a, t, c: {"infeasible": "Requested 999.0 MW exceeds the unprotected load.",
+                                                               "max_feasible_mw": 1407.5})
+    at = AppTest.from_file(APP, default_timeout=120)
+    at.query_params["pct"] = "12.5"
+    at.run()
+    assert not at.exception
+    text = page_text(at)
+    assert "This target cannot be met" in text and "maximum feasible reduction 1407.5 MW" in text
+    assert "class='note warn'" in text and "Showing the nearest pre-computed setting" in text
+
+
+def test_missing_frozen_data_state_explains_what_to_do(monkeypatch, tmp_path):
+    import streamlit as st
+    st.cache_resource.clear()
+    monkeypatch.setattr(frozen, "FROZEN", tmp_path)  # an empty folder stands in for a missing data/frozen/
+    try:
+        at = AppTest.from_file(APP, default_timeout=120).run()
+        assert not at.exception
+        assert "The frozen data is missing." in page_text(at)
+        assert any("make freeze" in e.value for e in at.error)
+    finally:
+        st.cache_resource.clear()
+
+
+def test_missing_svi_zone_is_called_out_on_the_page(default_page):
+    assert "Zone 9 has no SVI data but 0 occupied households" in page_text(default_page)
+
+
+def test_drawer_band_text_uses_config_not_a_typed_number(default_page):
+    from metric_grid.config import load_config
+    widen = max(load_config()["optimizer"]["band_widen_pct"])
+    assert f"widened to at most {widen:.0f}% if needed" in page_text(default_page)

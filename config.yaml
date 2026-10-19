@@ -142,7 +142,14 @@ nrel:
   cold_week_days: 7
   reference_hour_local: 7     # hour starting 07:00 local standard time (EULP timestamps are period-ending, EST)
 
-demo_locations: []            # TODO Phase 4: fixed list of {label, lat, lon}; no live geocoder
+# Fixed demo locations (no live geocoder). Public buildings only, never home addresses. Coordinates: US Census Geocoder
+# (benchmark Public_AR_Current, https://geocoding.geo.census.gov/), looked up once on 2026-10-19 for the street address.
+# That the address is the named building is from public knowledge: the author should verify each before submission.
+# Each point falls inside an NC-08 zone (checked); the app reports the zone (a census tract) the building sits in.
+demo_locations:
+  - {label: "Union County Government Center, Monroe", county: "Union", address: "500 N Main St, Monroe, NC 28112", lat: 34.983617, lon: -80.550330}
+  - {label: "Robeson County Public Library, Lumberton", county: "Robeson", address: "101 N Chestnut St, Lumberton, NC 28358", lat: 34.617204, lon: -79.007862}
+  - {label: "Harrisburg Town Hall, Harrisburg", county: "Cabarrus", address: "4100 Main St, Harrisburg, NC 28075", lat: 35.325660, lon: -80.644836}
 
 nodes:
   enabled: false              # Phase 5 only; hides node panel when false

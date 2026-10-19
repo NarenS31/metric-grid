@@ -79,7 +79,7 @@ Both plans use the same band: T_NC08 <= sum x_i L_i <= T_NC08 + delta, delta = 2
   | 142 | Union | 0.29 | 24% | 2,429 | |
   | 12 | Cabarrus | 0.11 | 81% | 2,474 | |
 
-  The card is built only from these computed values and fixed-text follow-ups (outreach, backup-power planning, resilience-hub siting, request utility circuit data); it is never a switching recommendation. The list is a statement about this model and its settings, not a verified finding about specific neighborhoods.
+  The card is built only from these computed values and fixed-text follow-ups (outreach, backup-power planning, resilience-hub siting, request utility network data); it is never a switching recommendation. The list is a statement about this model and its settings, not a verified finding about specific neighborhoods.
 - **Where the cuts land (default).** Baseline: Cabarrus 4 zones (63.7 MW, 11,516 households, mean SVI 0.48), Anson 1 (8.7 MW, 1,498 households, SVI 0.91), Union 1 (19.6 MW, 2,429 households, SVI 0.29). Weighted: Union 9 zones (81.5 MW, 15,910 households, mean SVI 0.04) and Mecklenburg 1 (10.7 MW, 2,046 households, SVI 0.01). The weighted plan concentrates its cuts in one county with very low vulnerability, which is a fairness concern of its own (cumulative burden on one place), and it is a version 2.0 item.
 
 **Scenarios (alpha 0.5):**
@@ -131,9 +131,18 @@ Compared with the cap OFF numbers (weighted: 88% of cuts in Union; vulnerability
 - **Pre-solved grid is now 40 records** (cap OFF and ON x 5 alphas x Elliott/10/15/20%), because the first capped live solve took 2.2 s and tripped the 2 s limit. Off-grid settings (the 7.5/12.5/17.5% slider stops) solve live; if that errors, is infeasible, or takes over 2 s the app shows the nearest pre-solved result with a visible note.
 - **Offline maps.** Streamlit's frontend falls back to Carto basemap tiles from the internet when no map style is given; a Playwright network log caught this. The maps use a blank inline style (a data: URL), and the browser check shows zero external requests. Maps have no basemap, so the zones and NC-08 outline are the only features.
 - **Rendering bug.** `line_width_units="pixels"` drew huge solid lines in this deck.gl version; the maps use `line_width_min_pixels`. Protected zones are drawn with real diagonal hatch lines (deck.gl has no fill patterns).
-- **Wording fix.** The brief's follow-up "request feeder data" contains a banned word, so the card says "request utility network data". The rule-4 sentence contains "circuit" and is shown verbatim, so the banned-word check exempts that exact sentence.
+- **Wording fix.** The brief's follow-up wording used a banned term, so the card says "request utility network data". The required rule-4 sentence contains one banned word and is shown verbatim, so the banned-word check exempts that exact sentence.
 - **Not built yet:** the fixed demo-location lookup and the node panel (nodes are disabled in config).
 - **Dev tooling:** Playwright is in `requirements-dev.txt` only (not needed to run the app); `scripts/app_screenshots.py` makes `docs/figures/app_*.png` at 1440 px wide (the page is taller than 900 px, so the viewport grows to the content height) and checks horizontal scroll, external requests, console errors and banned words.
+
+## Phase 6: demo locations, states, audit (2026-10-19)
+
+- **Demo locations (config `demo_locations`).** Union County Government Center (Monroe), Robeson County Public Library (Lumberton), Harrisburg Town Hall (Harrisburg, Cabarrus). Public buildings only, no home addresses, no geocoder at runtime. Coordinates are the US Census Geocoder result for each street address (benchmark Public_AR_Current, looked up once on 2026-10-19; the geocoder was used at development time only). That each address is the named building is from public knowledge and is NOT verified: the author should check each before submission. Concord City Hall and Kannapolis City Hall were tried first for Cabarrus and fall outside the NC-08 zones, so they were not used. Each location is reported as the status of the census tract zone it sits in. In the default scenario all three zones are "kept on" under both plans (zones 160, 100, 33); only the Union zone is cut (baseline, 20% target with the county cap). The locations were chosen by county and building type, not by outcome.
+- **Zone detail opens on the top priority zone** (zone 8, the first row of the priority list, read from sensitivity.json, not typed).
+- **States.** Empty (no zone selected; `?zone=0`), loading (live solves show a spinner), infeasible (an orange note with the model's reason and the maximum feasible MW, plus the nearest pre-computed result), missing data (zone 9 has no SVI: a visible data note and a grey zone), missing frozen files (the page says to run `make data` and `make freeze`; no stack trace). Tests cover each.
+- **Tooltips** for SVI, ICE, census tract zone and target band are native hover text (definitions in `app/copy.py`; the band tooltip fills its percentages from config).
+- **Audit (`tests/test_audit.py`).** Banned-word check over every tracked text file (exempt: the brief, CLAUDE.md and the files that define the banned list; the required rule-4 sentence is removed before checking); AI_DISCLOSURE lists every tracked file; no model numbers typed into app strings (only label facts such as years and dataset names); README table and shot-list numbers match the model; the shot-list code excerpt matches optimizer.py line for line.
+- **App figure** in the robustness card is a compact version with larger type (data/frozen/alpha_tradeoff.png); the wide version is docs/figures/alpha_tradeoff.png.
 
 ## Data-source failures and fallbacks
 See

@@ -5,7 +5,7 @@ from metric_grid.model.optimizer import PairResult
 
 
 def headline(r: PairResult) -> str:
-    """'Same 92 MW cut. N fewer electric-heat households in the dark.' (flips to 'more' when that is what the numbers say)."""
+    """'Same {MW} MW cut. {N} fewer electric-heat households in the dark.' (flips to 'MORE' when that is what the numbers say)."""
     n = r.baseline.electric_heat_households - r.weighted.electric_heat_households
     mw = f"{r.target_mw:.0f}"
     if n > 0:
@@ -37,3 +37,25 @@ def flip_lines(zones: pd.DataFrame, r: PairResult, alpha_h: pd.Series) -> tuple[
 
 def dollars(x: float) -> str:
     return f"${x:,.0f}"
+
+
+TOOLTIPS = {  # plain-language definitions shown on hover; numbers in them are filled from config by tip()
+    "SVI": "Social Vulnerability Index (CDC/ATSDR, 2022): a tract's percentile rank from 0 (least vulnerable) to 1 (most vulnerable) "
+           "among US tracts. It already includes age 65+, income, disability and housing factors.",
+    "ICE": "Interruption Cost Estimate (Lawrence Berkeley National Laboratory): survey-based estimates of what a power interruption "
+           "costs customers. Used here for a 1-hour interruption, in 2013 dollars (not inflated).",
+    "census tract zone": "Each zone is one census tract. It is not a utility service boundary and is not verified against any "
+                         "utility's network.",
+    "target band": "Both plans must cut at least the required MW and at most {delta}% more (widened up to {widen}% only if no "
+                   "combination of zones fits), because load is shed in blocks and operators cannot hit an exact MW.",
+    "modeled": "A modeled district estimate: scaled down from two utilities' balancing-authority demand with housing units and "
+               "jobs. Not an observed utility value.",
+}
+
+
+def tip(term: str, key: str, cfg: dict | None = None) -> str:
+    """HTML span that shows the definition for `key` on hover (dotted underline, help cursor)."""
+    text = TOOLTIPS[key]
+    if cfg is not None:
+        text = text.format(delta=f"{cfg['optimizer']['band_pct']:.0f}", widen=f"{max(cfg['optimizer']['band_widen_pct']):.0f}")
+    return f"<span class='tip' title=\"{text}\">{term}</span>"
