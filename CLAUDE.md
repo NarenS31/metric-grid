@@ -28,7 +28,7 @@ Run the app with `make app` (port 8765); screenshots with `scripts/app_screensho
 Python 3.11, Streamlit, GeoPandas, shapely, PuLP (CBC), pandas, numpy, pydeck, PyYAML (runtime); pytest, matplotlib, requests, Playwright (dev). requirements.txt = exactly the app's runtime imports, pinned; requirements-dev.txt = tests, figures, data refresh; requirements-node.txt = unused node packages. Make targets: data, freeze, test, app, demo, api. Ask before adding anything else.
 
 ## Layout
-`config.yaml` (every constant, source-commented; state/district/BA/counties only here), `data/raw` (gitignored), `data/frozen` (committed, only runtime inputs), `src/metric_grid/{config.py, ingest/, geometry/, model/, app/, nodes/}`, `tests/`, `docs/`, `firmware/`. The optional hardware node is out of this submission (the firmware folder was deleted 2026-10-19; node packages are in requirements-node.txt and nothing imports them). Do not recreate placeholder files for it.
+`config.yaml` (every constant, source-commented; state/district/BA/counties only here), `data/raw` (gitignored), `data/frozen` (committed, only runtime inputs), `src/metric_grid/{config.py, ingest/, geometry/, model/, app/, nodes/}`, `tests/`, `docs/`. The optional hardware node is out of this submission (the firmware folder was deleted 2026-10-19; node packages are in requirements-node.txt and nothing imports them). Do not recreate placeholder files for it.
 
 ## Working style
 One phase at a time; STOP for review at each phase and report verified / failed / needs decision. Update CHANGELOG.md and docs/AI_DISCLOSURE.md every step (same commit). Small functions with docstrings. Cap dead-data-source workarounds at ~20 min, then fall back and document. Don't overwrite existing files without looking first.
