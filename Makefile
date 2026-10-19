@@ -2,11 +2,11 @@ PY ?= .venv/bin/python
 
 .PHONY: data freeze test app demo api
 
-data:      ## Phases 1-2 done; Phase 3 pending. Download raw inputs into data/raw (needs network + .env keys)
+data:      ## Phases 1-3 done. Download raw inputs into data/raw (needs network + .env keys)
 	set -a; [ -f .env ] && . ./.env; set +a; PYTHONPATH=src $(PY) -m metric_grid.ingest.run
 
-freeze:    ## Phase 3: write data/frozen/ (the only runtime inputs)
-	@echo "TODO: not implemented (Phase 3)"; exit 1
+freeze:    ## Phase 3: write data/frozen/ (the only runtime inputs); run `make data` first
+	PYTHONPATH=src $(PY) -m metric_grid.ingest.freeze
 
 test:
 	$(PY) -m pytest -q

@@ -35,7 +35,7 @@ When a utility can't meet demand it sheds load by opening breakers at substation
 
 ## Status
 
-Phases 0-2 complete (scaffold, district and census data, demand and load profiles, district scaling). Phase 3 (zones, allocation, freeze) is next; `make app` and `make demo` are still stubs.
+Phases 0-3 complete (data, district scaling, census tract zones, frozen inputs). Phase 4 (optimizer, harm model, full app) is next; the app is a shell and `make app`/`make demo` are still stubs.
 
 ## Layout
 

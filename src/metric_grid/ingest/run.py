@@ -14,6 +14,7 @@ def build_all() -> None:
     print(f"KCLT observations: {len(noaa.build_noaa(cfg))}")
     res, com = resstock.build_loads(cfg)
     print(f"footprint county-group rows: {len(footprints.build_footprints(cfg))}")
+    footprints.build_footprints(cfg, rule="equal")  # sensitivity input for `make freeze`
     print(f"ResStock NC kW/unit: {res['kw_per_unit']:.3f}; ComStock counties: {len(com)}")
 
 

@@ -41,5 +41,31 @@ def demand_figure(out_path=ROOT / "docs" / "figures" / "demand_elliott.png") -> 
     fig.savefig(out_path, dpi=130)
 
 
+
+
+def zone_map_figure(out_path=ROOT / "docs" / "figures" / "zone_map_L.png") -> None:
+    """Zones coloured by estimated zone load L_i (MW); protected zones hatched with a heavy outline. Reads data/frozen only."""
+    from matplotlib.patches import Patch
+
+    from metric_grid import frozen
+
+    zones = frozen.load_zones()
+    consts = frozen.load_constants()
+    fig, ax = plt.subplots(figsize=(8, 7.5))
+    zones.plot(column="L_mw", cmap="viridis", edgecolor="white", linewidth=0.3, legend=True, ax=ax,
+               legend_kwds={"label": "Estimated zone load L_i at 07:00 (MW, modeled district estimate)", "shrink": 0.7})
+    prot = zones[zones["protected"]]
+    prot.plot(facecolor="none", edgecolor="black", linewidth=1.6, hatch="///", ax=ax)
+    ax.legend(handles=[Patch(facecolor="none", edgecolor="black", hatch="///", label="protected (hospital, nursing home, water treatment)")],
+              loc="lower left", fontsize=8)
+    ax.set_axis_off()
+    ax.set_title(f"NC-08 census tract zones: {consts['n_zones']} zones, {consts['n_protected']} protected\n"
+                 f"D_NC08 = {consts['D_NC08_mw']:,.0f} MW (modeled), T_NC08 = {consts['T_NC08_mw']:.1f} MW (modeled)", fontsize=10)
+    fig.tight_layout()
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out_path, dpi=130)
+
+
 if __name__ == "__main__":
     demand_figure()
+    zone_map_figure()

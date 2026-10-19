@@ -1,0 +1,166 @@
+{
+  "built_utc": "2026-10-19T02:44:45+00:00",
+  "scenario": {
+    "name": "Winter Storm Elliott, Dec 24 2022, 07:00",
+    "date": "2022-12-24",
+    "eia_window_start_utc": "2022-12-22T00:00",
+    "eia_window_end_utc": "2022-12-26T23:00",
+    "local_tz": "America/New_York",
+    "shed_start_local": "06:14",
+    "reference_hour_local": "07:00"
+  },
+  "district": {
+    "state_fips": "37",
+    "district": "08",
+    "tiger_year": 2024,
+    "tract_min_overlap": 0.5,
+    "counties": [
+      "007",
+      "025",
+      "119",
+      "123",
+      "153",
+      "155",
+      "165",
+      "167",
+      "179"
+    ]
+  },
+  "zone_mode": "tract",
+  "zone_note": "census tract zone (not a utility service boundary)",
+  "n_zones": 183,
+  "n_protected": 26,
+  "protected_types": [
+    "hospital",
+    "nursing_home",
+    "water_treatment"
+  ],
+  "display_only_types": [
+    "fire_station",
+    "police",
+    "wastewater_treatment"
+  ],
+  "kw_per_unit": 5.4318295039,
+  "kw_per_job": 1.3911281671339761,
+  "commercial_scope": "state",
+  "D_NC08_mw": 1686.3147134492037,
+  "T_NC08_mw": 91.90941322023045,
+  "r_effective": 0.054503120020958654,
+  "W_NC08_kw": 2023501.3619341822,
+  "groups": {
+    "DEC": {
+      "D_group_mw": 20879.0,
+      "r": 0.04789501412902917,
+      "W_district": 1348244.4677385897,
+      "W_group": 24456927.614277355,
+      "share_of_group": 0.055127303355615186,
+      "D_district_mw": 1151.0029667618894,
+      "T_district_mw": 55.12730335561518
+    },
+    "DEP": {
+      "D_group_mw": 13986.0,
+      "r": 0.06871156871156871,
+      "W_district": 675256.8941955925,
+      "W_group": 17642323.338994574,
+      "share_of_group": 0.03827482816297113,
+      "D_district_mw": 535.3117466873143,
+      "T_district_mw": 36.78210986461526
+    }
+  },
+  "r_definition": "each utility's maximum firm load shed that morning / its demand at 07:00 (not a 07:00 snapshot)",
+  "sensitivity": [
+    {
+      "case": "default: customer_spread, max shed (DEC 1,000 / DEP 961 MW)",
+      "D_NC08_mw": 1686.3147134492037,
+      "T_NC08_mw": 91.90941322023045,
+      "r_effective": 0.054503120020958654
+    },
+    {
+      "case": "DEP shed at its ~600 MW 07:00 snapshot (DEC 1,000)",
+      "D_NC08_mw": 1686.3147134492037,
+      "T_NC08_mw": 78.09220025339786,
+      "r_effective": 0.04630938675359557
+    },
+    {
+      "case": "shared counties split equally",
+      "D_NC08_mw": 1672.3874739294265,
+      "T_NC08_mw": 94.55294722044962,
+      "r_effective": 0.05653770354921929
+    },
+    {
+      "case": "shared counties wholly DEC",
+      "D_NC08_mw": 1611.0542105620407,
+      "T_NC08_mw": 87.55701325855128,
+      "r_effective": 0.054347651795035305
+    },
+    {
+      "case": "shared counties wholly DEP",
+      "D_NC08_mw": 1549.8143199962938,
+      "T_NC08_mw": 90.76059450258288,
+      "r_effective": 0.058562237638119075
+    }
+  ],
+  "protected_load_mw": 278.7882900631934,
+  "sources": {
+    "zone_load": "modeled district estimate",
+    "D_NC08": "modeled district estimate",
+    "T_NC08": "modeled district estimate"
+  },
+  "datasets": [
+    {
+      "name": "Census TIGER/Line 2024 (cd119, tracts)",
+      "vintage": "2024",
+      "url": "https://www2.census.gov/geo/tiger/TIGER2024/"
+    },
+    {
+      "name": "Census ACS 5-year",
+      "vintage": "2020-2024",
+      "url": "https://api.census.gov/data/2024/acs/acs5"
+    },
+    {
+      "name": "CDC/ATSDR Social Vulnerability Index",
+      "vintage": "2022",
+      "url": "https://svi.cdc.gov/"
+    },
+    {
+      "name": "LEHD LODES8 WAC",
+      "vintage": "2023",
+      "url": "https://lehd.ces.census.gov/data/lodes/LODES8/"
+    },
+    {
+      "name": "OpenStreetMap critical facilities via Overpass (coverage incomplete)",
+      "vintage": "pulled 2026-10-18",
+      "url": "https://overpass-api.de/"
+    },
+    {
+      "name": "EIA-930 hourly demand (DUK, CPLE, CPLW)",
+      "vintage": "2022-12-22..26",
+      "url": "https://api.eia.gov/v2/electricity/rto/region-data/data/"
+    },
+    {
+      "name": "EIA Form 861 (county to utility/BA assignment)",
+      "vintage": "2024",
+      "url": "https://www.eia.gov/electricity/data/eia861/"
+    },
+    {
+      "name": "NREL End-Use Load Profiles, ResStock/ComStock AMY2018 release 2 (cold week 2018-01-01..07)",
+      "vintage": "2024 release",
+      "url": "https://oedi-data-lake.s3.amazonaws.com/nrel-pds-building-stock/end-use-load-profiles-for-us-building-stock/2024/"
+    },
+    {
+      "name": "SC Office of Regulatory Staff, DEC/DEP December 2022 outage report (shed amounts)",
+      "vintage": "2023",
+      "url": "https://ors.sc.gov/"
+    },
+    {
+      "name": "FERC-NERC staff report on Winter Storm Elliott (shed amounts)",
+      "vintage": "Nov 2023",
+      "url": "https://www.ferc.gov/sites/default/files/2024-02/24_Winter-Storm_Elliot_0207_UPDATE.pdf"
+    },
+    {
+      "name": "KCLT ASOS temperature via Iowa Environmental Mesonet (display only)",
+      "vintage": "2022-12-23..25",
+      "url": "https://mesonet.agron.iastate.edu/"
+    }
+  ]
+}

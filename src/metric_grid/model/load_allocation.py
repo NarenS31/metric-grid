@@ -58,3 +58,17 @@ def run_scaling(cfg: dict, counties: pd.DataFrame, tracts: pd.DataFrame, demand_
     out = district_scaling(demand_mw, shed_mw, wd, wg)
     out["W_NC08_kw"] = float(wd.sum())
     return out
+
+
+def allocate_zone_loads(zones: pd.DataFrame, d_district_mw: float, kw_per_unit: float, kw_per_job: float) -> pd.DataFrame:
+    """Add W_i (kW) and L_i (MW) per zone: L_i = D_NC08 * W_i / sum_j W_j, so sum L_i = D_NC08.
+
+    Zones with missing housing units or jobs are an error here (no silent zero-fill).
+    """
+    if zones["housing_units"].isna().any() or zones["jobs_total"].isna().any():
+        raise ValueError("zones with missing housing_units or jobs_total cannot be allocated load")
+    z = zones.copy()
+    z["W_kw"] = weight(z["housing_units"], z["jobs_total"], kw_per_unit, kw_per_job)
+    z["L_mw"] = d_district_mw * z["W_kw"] / z["W_kw"].sum()
+    z["L_source"] = "modeled district estimate"
+    return z

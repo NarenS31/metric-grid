@@ -78,7 +78,10 @@ facilities:
   display_only_types: ["fire_station", "police", "wastewater_treatment"]
 
 zones:
-  zone_mode: "substation"     # "substation" or "tract"; falls back to tract if HIFLD substations need auth (Phase 3)
+  # "substation" (Voronoi around public substation points; not implemented) or "tract".
+  # tract because the official HIFLD Open Electric Substations layer is not reachable (2026-10-18: the HIFLD ArcGIS org
+  # lists only transmission lines; the only copies found are third-party and cover >=69 kV, not distribution). See ASSUMPTIONS.md.
+  zone_mode: "tract"
   min_zone_area_km2: null     # TODO Phase 3: sliver threshold, documented
 
 harm:

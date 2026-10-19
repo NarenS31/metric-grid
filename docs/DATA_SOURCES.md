@@ -15,5 +15,5 @@ Each entry gets: name, URL, dataset date/vintage, retrieval date, what it is use
 | EIA Form 861 (data year 2024): Service_Territory, Sales_Ult_Cust (BA Code, customers) | county -> utility/BA assignment; customer counts for shared-county split | https://www.eia.gov/electricity/data/eia861/zip/f8612024.zip | 2024 | downloaded 2026-10-18 |
 | NREL End-Use Load Profiles: ResStock AMY2018 release 2 (NC state), ComStock AMY2018 release 2 (NC state, counties) | load per housing unit / per job | https://oedi-data-lake.s3.amazonaws.com/nrel-pds-building-stock/end-use-load-profiles-for-us-building-stock/2024/ | AMY2018, release 2 (2024) | cold week downloaded 2026-10-18 |
 | KCLT ASOS hourly temperature via Iowa Environmental Mesonet (NOAA NCEI was unavailable) | display only | https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py | 2022-12-23..25 | downloaded 2026-10-18 |
-| HIFLD Electric Substations | zone generating points | TBD Phase 3 | TBD | pending |
+| HIFLD Open Electric Substations | zone generating points | not reachable (see ASSUMPTIONS.md Phase 3) | n/a | unavailable; zones are census tracts |
 | LBNL ICE Calculator 2.0 | interruption cost per sector | TBD Phase 4 | TBD | pending |
