@@ -1,7 +1,7 @@
 """District scaling (spec rule 4): never allocate BA demand or the regional reduction into the district directly.
 
-    D_NC08 = sum_g  D_g(07:00) * W_district_in_g / W_g        (modeled district estimate)
-    T_NC08 = sum_g  D_NC08_g * r_g,   r_g = shed_g / D_g(07:00)
+    D_NC08 = sum_g  D_g * W_district_in_g / W_g       (D_g: the hour ending 07:00)        (modeled district estimate)
+    T_NC08 = sum_g  D_NC08_g * r_g,   r_g = shed_g / D_g
 with a consistent modeled weight W = housing_units * kW/unit + jobs * kW/job.
 """
 import pandas as pd

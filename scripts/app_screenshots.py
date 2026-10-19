@@ -48,6 +48,10 @@ def main() -> int:
             page.set_viewport_size({"width": 1440, "height": int(height)})
             page.wait_for_timeout(4000)
             page.screenshot(path=str(out / f"{name}.png"))
+            if name == "app_default":  # the demand panel, cropped from the full-height page
+                box = page.get_by_text("Why forecasts aren't enough").first.bounding_box()
+                page.screenshot(path=str(out / "app_demand_panel.png"),
+                                clip={"x": 60, "y": box["y"] - 28, "width": 1320, "height": 560})
             report[name] = {"scrollWidth/clientWidth": sw, "external_hosts": sorted(external), "console_errors": console_errors[:3],
                             "banned_words": hits, "has_required_sentence": REQUIRED_SENTENCE in re.sub(r"\s+", " ", text_all),
                             "canvases": page.locator("canvas").count()}

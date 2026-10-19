@@ -220,9 +220,13 @@ def build_and_write(df: pd.DataFrame | None = None) -> dict:
     df = load_training() if df is None else df
     res = run_validation(df)
     pool, _ = split_pool(df)
-    res["cv_error_by_temperature"] = {k: cv_error_by_temperature(pool, k) for k in ("linear", "boosted")}  # diagnostic only
+    oofs = {k: oof_predictions(pool, k) for k in ("linear", "boosted")}
+    res["cv_error_by_temperature"] = {k: cv_error_by_temperature(pool, k, oofs[k]) for k in oofs}  # diagnostic only
+    res["cv_combined_duk_cple"] = {k: {"mape_pct": float(((o["pred"] - o["actual"]).abs() / o["actual"]).mean() * 100),
+                                       "mae_mw": float((o["pred"] - o["actual"]).abs().mean()), "n": int(len(o))} for k, o in oofs.items()}
     FROZEN.mkdir(parents=True, exist_ok=True)
     (FROZEN / "demand_validation.json").write_text(json.dumps(res, indent=1, default=float))
+    (FROZEN / "demand_panel.json").write_text(json.dumps(build_panel(df, res, pool, oofs[res["chosen"]]), indent=1))
     if res["chosen"] == "linear":
         spec = {"kind": "linear", "base_temp_f": BASE_F, "trend_origin": str(TREND_ORIGIN.date()), "trained_on": "all winter hours except Dec 2022",
                 "n_train": res["n_pool"], "models": {ba: linear_spec(fit_model("linear", pool, ba)) for ba in BA_COLUMNS},
@@ -231,25 +235,62 @@ def build_and_write(df: pd.DataFrame | None = None) -> dict:
     return res
 
 
-def cv_error_by_temperature(pool: pd.DataFrame, kind: str) -> list[dict]:
-    """Diagnostic only (does not feed model selection): out-of-fold percent error of DUK+CPLE demand by temperature bin,
-    from leave-one-winter-out predictions on the pool. Temperature = mean of the two stations."""
+def oof_predictions(pool: pd.DataFrame, kind: str) -> pd.DataFrame:
+    """Out-of-fold DUK+CPLE predictions from leave-one-winter-out fits on the pool (rows where all inputs exist).
+    Columns: actual, pred (MW, DUK+CPLE), t (mean of the two station temperatures, F)."""
     rows = []
     for w in sorted(pool["winter"].unique()):
         tr, te = pool[pool["winter"] != w], pool[pool["winter"] == w].copy()
-        for ba, (mw, _) in BA_COLUMNS.items():
+        for ba in BA_COLUMNS:
             te[f"pred_{ba}"] = fit_model(kind, tr, ba).predict(te)
         rows.append(te)
     d = pd.concat(rows)
-    d = d[d[["duk_mw", "cple_mw", "pred_DUK", "pred_CPLE", "kclt_f", "krdu_f"]].notna().all(axis=1)]
+    d = d[d[["duk_mw", "cple_mw", "pred_DUK", "pred_CPLE", "kclt_f", "krdu_f"]].notna().all(axis=1)].copy()
     d["t"] = (d["kclt_f"] + d["krdu_f"]) / 2
     d["actual"], d["pred"] = d["duk_mw"] + d["cple_mw"], d["pred_DUK"] + d["pred_CPLE"]
+    return d[["actual", "pred", "t"]]
+
+
+def cv_error_by_temperature(pool: pd.DataFrame, kind: str, oof: pd.DataFrame | None = None) -> list[dict]:
+    """Diagnostic only (does not feed model selection): out-of-fold percent error of DUK+CPLE demand by temperature bin,
+    from leave-one-winter-out predictions on the pool. Temperature = mean of the two stations."""
+    d = oof_predictions(pool, kind) if oof is None else oof.copy()
     d["bin"] = pd.cut(d["t"], [-50, 20, 25, 30, 35, 45, 100], labels=["below 20 F", "20-25 F", "25-30 F", "30-35 F", "35-45 F", "45 F and above"])
     out = []
     for b, g in d.groupby("bin", observed=True):
         out.append({"temp_bin": str(b), "hours": int(len(g)), "mean_pct_error": float(((g["pred"] - g["actual"]) / g["actual"]).mean() * 100),
                     "mape_pct": float(((g["pred"] - g["actual"]).abs() / g["actual"]).mean() * 100)})
     return out
+
+
+PANEL_LABEL = "modeled demand estimate; not a utility forecast; does not predict outages or available supply"
+
+
+def build_panel(df: pd.DataFrame, validation: dict, pool: pd.DataFrame, oof: pd.DataFrame) -> dict:
+    """Precomputed data for the app's "Why forecasts aren't enough" panel. The app ships this file only (no scikit-learn):
+    hourly actual vs predicted DUK+CPLE demand for Dec 22-26, 2022 from the chosen model trained WITHOUT Dec 2022."""
+    kind = validation["chosen"]
+    fits = {ba: fit_model(kind, pool, ba) for ba in BA_COLUMNS}
+    lo, hi = (pd.Timestamp(x, tz="America/New_York") for x in ("2022-12-22", "2022-12-27"))
+    win = df[(df["local_end"] > lo) & (df["local_end"] <= hi)].copy()
+    full = {ba: fits[ba].predict(df) for ba in BA_COLUMNS}   # predict on the whole table so lagged features have their context
+    pred = {ba: full[ba].loc[win.index] for ba in BA_COLUMNS}
+    win["actual"] = win["duk_mw"] + win["cple_mw"]
+    win["pred"] = pred["DUK"] + pred["CPLE"]
+    series = [{"local_end": r.local_end.strftime("%Y-%m-%dT%H:%M:%S"), "actual_mw": None if np.isnan(r.actual) else float(r.actual),
+               "predicted_mw": None if np.isnan(r.pred) else float(r.pred), "temp_f": None if np.isnan(r.kclt_f) else float(r.kclt_f)}
+              for r in win.itertuples()]
+    target = pd.Timestamp("2022-12-24 07:00", tz="America/New_York")
+    row = win[win["local_end"] == target].iloc[0]
+    gap_mw = float(row["pred"] - row["actual"])
+    cv_mape = float(((oof["pred"] - oof["actual"]).abs() / oof["actual"]).mean() * 100)
+    return {"label": PANEL_LABEL, "model": kind, "n_winters": int(pool["winter"].nunique()), "n_train_hours": int(len(pool)),
+            "typical_mape_pct": cv_mape, "typical_mape_basis": "leave-one-winter-out cross-validation, DUK+CPLE, training pool only",
+            "holdout_mape_pct": validation["holdout"][kind]["DUK+CPLE"]["all_dec_2022"]["mape_pct"],
+            "elliott": {"local_end": target.strftime("%Y-%m-%dT%H:%M:%S"), "hour_label": "hour ending 07:00 (06:00-07:00) local",
+                        "actual_mw": float(row["actual"]), "predicted_mw": float(row["pred"]), "gap_mw": gap_mw,
+                        "gap_pct": 100 * gap_mw / float(row["actual"]), "temp_f": float(row["kclt_f"])},
+            "series": series, "error_by_temperature": cv_error_by_temperature(pool, kind, oof)}
 
 
 if __name__ == "__main__":

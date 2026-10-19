@@ -29,6 +29,16 @@ def load_demand() -> pd.DataFrame:
     return pd.read_csv(FROZEN / "demand_groups.csv")
 
 
+def load_demand_panel() -> dict | None:
+    """Precomputed data for the "Why forecasts aren't enough" panel, or None if the file is missing or unreadable.
+    The app hides the panel in that case; nothing else depends on it."""
+    path = FROZEN / "demand_panel.json"
+    try:
+        return json.loads(path.read_text()) if path.exists() else None
+    except (OSError, ValueError):
+        return None
+
+
 def load_district() -> gpd.GeoDataFrame:
     """NC-08 boundary (WGS84, simplified), drawn as an outline on every map."""
     return gpd.read_file(FROZEN / "district.geojson")

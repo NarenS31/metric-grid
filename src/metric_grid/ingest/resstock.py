@@ -1,9 +1,9 @@
 """Phase 2.3: NREL ResStock / ComStock load profiles for the coldest week of the AMY2018 weather year.
 
 Source files are huge, time-ordered CSVs (15-minute rows, timestamps are period-ending, EST). We use HTTP Range
-requests and a byte-offset bisect to fetch only the cold week, then average the 07:00-07:59 hour over its days.
+requests and a byte-offset bisect to fetch only the cold week, then average the reference hour (06:00-06:59, the hour ending 07:00) over its days.
 
-Outputs (kW, average over the 07:00 hour of the cold week):
+Outputs (kW, average over the reference hour 06:00-07:00 of the cold week):
   * residential kW per housing unit (ResStock NC state aggregate: total kWh / units_represented)
   * commercial kW per county (ComStock county aggregate: sum over building types)
 ResStock has no county aggregates in any release, so the residential per-unit value is statewide NC (documented).

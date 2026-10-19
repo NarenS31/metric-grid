@@ -28,7 +28,7 @@ def demand_figure(out_path=ROOT / "docs" / "figures" / "demand_elliott.png") -> 
     ax.axvline(6 + 14 / 60, color="grey", ls="--", lw=1)
     ax.text(6.3, ax.get_ylim()[0] + 0.5, "shed begins 6:14 (DEC)", fontsize=8, color="grey")
     ax.axvline(7, color="black", lw=1)
-    ax.text(7.1, ax.get_ylim()[1] - 1.2, "07:00 reference hour", fontsize=8)
+    ax.text(7.1, ax.get_ylim()[1] - 1.2, "hour ending 07:00", fontsize=8)
     ax.set_xlabel("Hour of day, 2022-12-24 (local, EST)")
     ax.set_ylabel("Observed demand (GW)")
     ax2 = ax.twinx()
@@ -54,7 +54,7 @@ def zone_map_figure(out_path=ROOT / "docs" / "figures" / "zone_map_L.png") -> No
     consts = frozen.load_constants()
     fig, ax = plt.subplots(figsize=(8, 7.5))
     zones.plot(column="L_mw", cmap="viridis", edgecolor="white", linewidth=0.3, legend=True, ax=ax,
-               legend_kwds={"label": "Estimated zone load L_i at 07:00 (MW, modeled district estimate)", "shrink": 0.7})
+               legend_kwds={"label": "Estimated zone load L_i, hour ending 07:00 (MW, modeled district estimate)", "shrink": 0.7})
     prot = zones[zones["protected"]]
     prot.plot(facecolor="none", edgecolor="black", linewidth=1.6, hatch="///", ax=ax)
     frozen.load_district().boundary.plot(ax=ax, color="#d95f02", linewidth=2.2)

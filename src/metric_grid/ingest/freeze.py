@@ -32,17 +32,19 @@ DATASETS = [  # provenance list for the app's drawer (vintage per source; full n
     {"name": "SC Office of Regulatory Staff, DEC/DEP December 2022 outage report (shed amounts)", "vintage": "2023", "url": "https://ors.sc.gov/"},
     {"name": "FERC-NERC staff report on Winter Storm Elliott (shed amounts)", "vintage": "Nov 2023", "url": "https://www.ferc.gov/sites/default/files/2024-02/24_Winter-Storm_Elliot_0207_UPDATE.pdf"},
     {"name": "LBNL interruption cost estimates (ICE Calculator 2.0 report LBNL-6941E), 2013 dollars", "vintage": "2015", "url": "https://eta-publications.lbl.gov/sites/default/files/lbnl-6941e.pdf"},
+    {"name": "EIA-930 bulk files, Dec 2017 to Dec 2018 (demand-model training history)", "vintage": "2017-2019", "url": "https://www.eia.gov/electricity/gridmonitor/sixMonthFiles/"},
+    {"name": "KCLT and KRDU hourly temperature via Iowa Environmental Mesonet, winters 2018-2025 (demand-model inputs)", "vintage": "Dec 2017 to Feb 2025", "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py"},
     {"name": "KCLT ASOS temperature via Iowa Environmental Mesonet (display only)", "vintage": "2022-12-23..25", "url": "https://mesonet.agron.iastate.edu/"},
 ]
 
 
 def scaling_cases(cfg, tracts, demand, shed, kwu, kwj) -> list[dict]:
-    """Default result plus sensitivity rows (shared-county rules, DEP at its 07:00 snapshot)."""
+    """Default result plus sensitivity rows (shared-county rules, DEP at its level during that hour)."""
     cs = pd.read_csv(PROCESSED / "county_groups.csv", dtype={"geoid5": str})
     eq = pd.read_csv(PROCESSED / "county_groups_equal.csv", dtype={"geoid5": str})
     shed_dep600 = {**shed, "DEP": 600.0}
     cases = [("default: customer_spread, max shed (DEC 1,000 / DEP 961 MW)", cs, shed),
-             ("DEP shed at its ~600 MW 07:00 snapshot (DEC 1,000)", cs, shed_dep600),
+             ("DEP shed at its ~600 MW level early in that hour (DEC 1,000)", cs, shed_dep600),
              ("shared counties split equally", eq, shed),
              ("shared counties wholly DEC", la.override_shared(cs, "DEC"), shed),
              ("shared counties wholly DEP", la.override_shared(cs, "DEP"), shed)]
@@ -98,7 +100,7 @@ def freeze() -> dict:
         "kw_per_unit": kwu, "kw_per_job": kwj, "commercial_scope": cfg["weights"]["commercial_scope"],
         "D_NC08_mw": sc["D_NC08_mw"], "T_NC08_mw": sc["T_NC08_mw"], "r_effective": sc["r_effective"],
         "W_NC08_kw": sc["W_NC08_kw"], "groups": sc["groups"],
-        "r_definition": "each utility's maximum firm load shed that morning / its demand at 07:00 (not a 07:00 snapshot)",
+        "r_definition": "each utility's maximum firm load shed that morning / its demand in the hour ending 07:00 (06:00-07:00); not a snapshot of the shed in that hour",
         "sensitivity": scaling_cases(cfg, tr, demand, shed, kwu, kwj),
         "protected_load_mw": float(zones.loc[zones["protected"], "L_mw"].sum()),
         "sources": {"zone_load": "modeled district estimate", "D_NC08": "modeled district estimate", "T_NC08": "modeled district estimate"},

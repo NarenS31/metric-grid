@@ -31,7 +31,7 @@ Three reviews, one per reviewer type. Fill in after each review. **Never claim e
 
 - Date: 
 - Role / relationship (not name): 
-- Questions: Is the district scaling from two balancing authorities reasonable? Is "maximum firm load shed / demand at 07:00" a fair ratio? Are the claims in the honest-limits list the right ones? What would a planner need before using this?
+- Questions: Is the district scaling from two balancing authorities reasonable? Is "maximum firm load shed / demand in the hour ending 07:00" a fair ratio? Are the claims in the honest-limits list the right ones? What would a planner need before using this?
 - What they said (verbatim, with permission): 
 - What I changed (commit / file): 
 - What I did not change, and why: 

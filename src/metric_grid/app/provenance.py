@@ -13,6 +13,8 @@ UI_SOURCES = {
     "Interruption cost (2013 dollars)": ("modeled", ["LBNL"]),
     "Protected zones": ("OpenStreetMap points; coverage incomplete", ["OpenStreetMap"]),
     "Reduction ratio r (each utility's maximum firm load shed, MW)": ("sourced, regional", ["SC Office of Regulatory Staff", "FERC-NERC"]),
+    "Demand panel (predicted vs actual DUK+CPLE demand, error by temperature)": ("modeled demand estimate; not a utility forecast",
+        ["EIA-930", "KCLT"]),
     "Zone boundaries": ("census tract zones, not utility boundaries", ["Census TIGER"]),
     "Harm weights, alpha, band width, county cap": ("judgment calls set in config.yaml", []),
 }

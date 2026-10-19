@@ -103,7 +103,8 @@ def test_shotlist_numbers_and_code_match_reality(default_pair):
     import pandas as pd
     rows = pd.DataFrame(frozen.load_sensitivity()["rows"])
     assert f"{int((rows['human_change_pct'] < 0).sum())} of {len(rows)} settings beat the baseline on human harm" in s
-    assert f"I tried {len(rows)} settings" in s and "(zone 8 is open)" in s
+    top = frozen.load_sensitivity()["priority_list"][0]["zone_id"]
+    assert f"I tried {len(rows)} settings" in s and f"(zone {top} is open)" in s
     # every excerpt line on the shot list exists in optimizer.py, and block 1 is contiguous there
     opt = (ROOT / "src/metric_grid/model/optimizer.py").read_text()
     blocks = re.findall(r"```python\n(.*?)\n```", s, re.S)
@@ -205,3 +206,22 @@ def test_spec_has_amendments_table_with_every_required_change():
                    "pre-solved at `make freeze`", "four stops only"):
         assert needle in head, needle
     assert len(re.findall(r"\| 2026-10-\d\d \|", head)) >= 6  # each row dated
+
+
+def test_readme_demand_numbers_match_the_panel_file():
+    readme = (ROOT / "README.md").read_text()
+    p = frozen.load_demand_panel()
+    e = p["elliott"]
+    for v in (f"{p['typical_mape_pct']:.1f}%", f"{abs(e['gap_pct']):.1f}%", f"{e['predicted_mw']:,.0f} MW predicted", f"{e['actual_mw']:,.0f} MW actual"):
+        assert v in readme, v
+
+
+def test_hour_ending_wording_is_used_wherever_the_reference_hour_is_named():
+    """After the 2026-10-19 correction the reference hour is "the hour ending 07:00 (06:00-07:00)"; no bare 'demand at 07:00'."""
+    import re
+    for f in ("README.md", "docs/VIDEO_SHOTLIST.md", "config.yaml", "CLAUDE.md"):
+        text = (ROOT / f).read_text()
+        assert not re.search(r"(?i)demand at 07:00|at 07:00 EST|07:00 reference hour", text), f
+    assert "hour ending 07:00" in (ROOT / "README.md").read_text() + (ROOT / "docs/VIDEO_SHOTLIST.md").read_text()
+    c = frozen.load_constants()
+    assert "hour ending 07:00" in c["r_definition"] and "hour ending 07:00" in c["scenario"]["name"]
