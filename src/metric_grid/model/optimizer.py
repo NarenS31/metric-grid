@@ -67,27 +67,39 @@ def _solver(max_seconds: float, gap_abs: float):
                              options=[f"randomCbcSeed {CBC_SEED}", f"randomSeed {CBC_SEED}"])
 
 
+def _build_problem(ids, L, protected, lo, hi, county_of=None, cap=None):
+    """The shared constraint set: binary x_i, x_i = 0 for protected zones, lo <= sum L_i x_i <= hi, optional county cap."""
+    prob = pulp.LpProblem("shed", pulp.LpMinimize)
+    x = {i: pulp.LpVariable(f"x_{i}", cat="Binary") for i in ids}
+    for i in ids:
+        if protected[i]:
+            prob += x[i] == 0  # hard exclusion (PuLP ignores upBound on Binary variables, so state it as a constraint)
+    load = pulp.lpSum(L[i] * x[i] for i in ids)
+    prob += load >= lo
+    prob += load <= hi
+    if cap is not None:  # county c: sum_{i in c} L_i x_i <= cap * sum_i L_i x_i  (linear, so no extra variables)
+        for c in sorted(set(county_of.values())):
+            prob += pulp.lpSum(L[i] * x[i] for i in ids if county_of[i] == c) <= cap * load
+    return prob, x
+
+
+def solve_one(ids, L, protected, lo, hi, objective, max_seconds, gap_abs, county_of=None, cap=None):
+    """One solve of `objective` inside [lo, hi] (no tie-break stage). Returns the sorted selected ids, or None."""
+    prob, x = _build_problem(ids, L, protected, lo, hi, county_of, cap)
+    prob += pulp.lpSum(objective[i] * x[i] for i in ids)
+    prob.solve(_solver(max_seconds, gap_abs))
+    if pulp.LpStatus[prob.status] != "Optimal":
+        return None
+    return sorted(i for i in ids if x[i].value() is not None and x[i].value() > 0.5)
+
+
 def _solve_stage(ids, L, protected, lo, hi, objective, tol, max_seconds, county_of=None, cap=None):
     """Minimize `objective` inside [lo, hi] to within `tol`, then break ties: fewest zones, then lowest zone_ids.
 
     Two solves: (1) the primary objective; (2) among solutions within `tol` of it, minimize M*count + sum(zone_id) with
     M larger than any possible zone_id sum, which is exactly "fewest zones, then lowest ids". Returns selected ids or None.
     """
-    def build():
-        prob = pulp.LpProblem("shed", pulp.LpMinimize)
-        x = {i: pulp.LpVariable(f"x_{i}", cat="Binary") for i in ids}
-        for i in ids:
-            if protected[i]:
-                prob += x[i] == 0  # hard exclusion (PuLP ignores upBound on Binary variables, so state it as a constraint)
-        load = pulp.lpSum(L[i] * x[i] for i in ids)
-        prob += load >= lo
-        prob += load <= hi
-        if cap is not None:  # county c: sum_{i in c} L_i x_i <= cap * sum_i L_i x_i  (linear, so no extra variables)
-            for c in sorted(set(county_of.values())):
-                prob += pulp.lpSum(L[i] * x[i] for i in ids if county_of[i] == c) <= cap * load
-        return prob, x
-
-    prob, x = build()
+    prob, x = _build_problem(ids, L, protected, lo, hi, county_of, cap)
     prob += pulp.lpSum(objective[i] * x[i] for i in ids)
     prob.solve(_solver(max_seconds, tol))
     if pulp.LpStatus[prob.status] != "Optimal":
@@ -95,7 +107,7 @@ def _solve_stage(ids, L, protected, lo, hi, objective, tol, max_seconds, county_
     best = pulp.value(prob.objective)
 
     big = float(sum(ids) + 1)
-    prob, x = build()
+    prob, x = _build_problem(ids, L, protected, lo, hi, county_of, cap)
     prob += pulp.lpSum(objective[i] * x[i] for i in ids) <= best + tol
     prob += pulp.lpSum((big + i) * x[i] for i in ids)  # big*count + sum(ids)
     prob.solve(_solver(max_seconds, 0.5))  # objective is integer-valued, so a 0.5 gap is exact
@@ -117,8 +129,8 @@ def solve(zones: pd.DataFrame, target_mw: float, alpha: float, band_pct: float =
           baseline_ids: list | None = None, county_cap: float | None = None) -> "PairResult | Infeasible":
     """Solve both plans in one shared band. `zones` needs zone_id, L_mw, protected, H_human, H_econ, Hhat_human,
     Hhat_econ, N_households, heat_electricity, jobs_total (see harm.compute_harm). The baseline does not depend on alpha or
-    the harm weights, so callers re-solving many harm settings may pass `baseline_ids` to skip Stage A (ignored if county_cap
-    is set, because the cap changes the baseline). `county_cap` (e.g. 0.5) needs a `COUNTYFP` column on zones."""
+    the harm weights, so callers may pass `baseline_ids` (e.g. the typical load-only plan from loadonly.py) to skip Stage A;
+    the caller is responsible for it matching the cap and band in use. `county_cap` (e.g. 0.5) needs a `COUNTYFP` column."""
     t0 = time.perf_counter()
     z = zones.sort_values("zone_id").reset_index(drop=True)
     free = z[~z["protected"]]
@@ -132,10 +144,8 @@ def solve(zones: pd.DataFrame, target_mw: float, alpha: float, band_pct: float =
         raise MissingDataError(f"zone_id {unpriced['zone_id'].tolist()} have unknown harm (missing SVI/ACS) and cannot be selected")
     ids = [int(i) for i in z["zone_id"]]
     county_of = dict(zip(ids, z["COUNTYFP"])) if county_cap is not None else None
-    if county_cap is not None:
-        baseline_ids = None
-        if not 0 < county_cap <= 1:
-            raise ValueError("county_cap must be in (0, 1]")
+    if county_cap is not None and not 0 < county_cap <= 1:
+        raise ValueError("county_cap must be in (0, 1]")
     L = dict(zip(ids, z["L_mw"]))
     prot = dict(zip(ids, z["protected"]))
     Hd = dict(zip(ids, H.fillna(0.0)))  # protected zones may be NaN; they are fixed to 0 so the value is never used
@@ -143,14 +153,12 @@ def solve(zones: pd.DataFrame, target_mw: float, alpha: float, band_pct: float =
     for pct in steps:
         lo, hi = target_mw, target_mw * (1 + pct / 100)
         a = list(baseline_ids) if baseline_ids is not None else _solve_stage(ids, L, prot, lo, hi, L, load_tol_mw, max_seconds, county_of, county_cap)
-        if baseline_ids is not None and not lo - 1e-9 <= sum(L[i] for i in a) <= hi + 1e-9:
-            a = _solve_stage(ids, L, prot, lo, hi, L, load_tol_mw, max_seconds)  # supplied baseline is outside this band
-        if a is None:
-            continue
+        if a is None or not lo - 1e-9 <= sum(L[i] for i in a) <= hi + 1e-9:
+            continue  # no baseline plan fits this band (or the supplied one does not): try the next widening step
         b = _solve_stage(ids, L, prot, lo, hi, Hd, 1e-4, max_seconds, county_of, county_cap)
         if b is None:
             continue
-        return PairResult(target_mw, lo, hi, pct, pct != band_pct, alpha, _summarize("load-only baseline", z, a, target_mw),
+        return PairResult(target_mw, lo, hi, pct, pct != band_pct, alpha, _summarize("typical load-only plan" if baseline_ids is not None else "load-only baseline", z, a, target_mw),
                           _summarize("harm-weighted plan", z, b, target_mw), time.perf_counter() - t0, z)
     return Infeasible(target_mw, max_feasible, f"No combination of unprotected zones lands within {target_mw:.1f} to "
                       f"{target_mw * (1 + steps[-1] / 100):.1f} MW (band widened up to {steps[-1]:.0f}%)"

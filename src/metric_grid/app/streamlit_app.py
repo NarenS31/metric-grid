@@ -7,7 +7,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # src/, so `stream
 import pandas as pd
 import streamlit as st
 
-from metric_grid.app import copy, data, demand_panel, lookup, maps, provenance, theme
+from metric_grid.app import copy, data, demand_panel, distribution, lookup, maps, provenance, theme
 from metric_grid.config import ROOT
 from metric_grid.model import harm
 from metric_grid.model.optimizer import PlanResult
@@ -96,6 +96,9 @@ with right:
 
 view = data.get_view(st.session_state["alpha"], st.session_state["pct"], st.session_state["cap"])
 r = view["pair"]
+rec = view["record"]
+dist, lo_key = rec["loadonly"], rec["loadonly_key"]
+n_plans, lo_counts, lo_metrics = dist["n"], A["lo_counts"][rec["loadonly_key"]], A["lo_metrics"][rec["loadonly_key"]]
 H = st.session_state["alpha"] * zh["Hhat_human"] + (1 - st.session_state["alpha"]) * zh["Hhat_econ"]
 H.index = zh["zone_id"]
 
@@ -105,7 +108,7 @@ with left:
     st.markdown(f"<div class='eyebrow'>{consts['scenario']['name'].split(',')[0]} · {when} · modeled district estimate</div>",
                 unsafe_allow_html=True)
     st.markdown(f"<div class='headline'>{copy.headline(r)}</div>", unsafe_allow_html=True)
-    st.markdown(f"<div class='honest'>{plain_summary(r)}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='honest'>{copy.range_line(dist)}<br/>{plain_summary(r)}</div>", unsafe_allow_html=True)
     st.markdown(f"<p class='scaling'>{provenance.DISTRICT_SENTENCE}</p>", unsafe_allow_html=True)
     for w in A["warnings"]:
         st.markdown(f"<p class='scaling'>Data note: {w}</p>", unsafe_allow_html=True)
@@ -127,11 +130,14 @@ st.markdown(
     "<span><span class='sw' style='background:transparent;border:2px solid #5B3FD6'></span>NC-08 outline (tracts shown whole)</span></div>",
     unsafe_allow_html=True)
 mc1, mc2 = st.columns(2, gap="medium")
-for col, title, sub, plan in ((mc1, "Load-only baseline", "Cuts the least MW above the target, ignores who lives there", r.baseline),
-                              (mc2, "Vulnerability-aware plan", "Lowest modeled harm for the same MW band", r.weighted)):
+for col, title, sub, short, plan in (
+        (mc1, f"A typical load-only plan (median of {n_plans} equivalent plans)",
+         "Meets the same MW band and ignores who lives there; one of many equivalent plans, the one closest to the median on four measures",
+         "typical load-only plan", r.baseline),
+        (mc2, "Vulnerability-aware plan", "Lowest modeled harm for the same MW band", "vulnerability-aware plan", r.weighted)):
     with col:
         st.markdown(f"<div class='maptitle'>{title}</div><div class='mapsub'>{sub}</div>", unsafe_allow_html=True)
-        fc = maps.zone_collection(zones, set(plan.zone_ids), title)
+        fc = maps.zone_collection(zones, set(plan.zone_ids), short, freq=lo_counts, n_plans=n_plans)
         st.pydeck_chart(maps.build_deck(fc, hatch, district_gj, vs), height=500)
         st.markdown(plan_metrics(plan), unsafe_allow_html=True)
 band_txt = f"Both plans cut between {r.band_lo_mw:.1f} and {r.band_hi_mw:.1f} MW"
@@ -147,17 +153,35 @@ for col, plan in ((cb1, r.baseline), (cb2, r.weighted)):
         st.caption("Where it lands: " + "; ".join(
             f"{i.replace(' County', '')} {row.share_of_cut:.0%} ({int(row.zones)} zones, {row.households:,.0f} households)" for i, row in b.iterrows()))
 
+# ---------------------------------------------------------------- 5b. distribution strip
+with st.container(border=True):
+    st.markdown(f"<div class='serif' style='font-size:1.2rem;font-weight:700'>Where the vulnerability-aware plan falls among {n_plans} equivalent load-only plans</div>",
+                unsafe_allow_html=True)
+    st.markdown("<p class='scaling'>Grey dots: each equivalent load-only plan (same MW band, near-minimal overshoot). Dark diamond: the typical plan on the "
+                "left map. Violet circle: the vulnerability-aware plan. Many plans tie, so a single load-only plan is arbitrary; the dots show the "
+                "whole range.</p>", unsafe_allow_html=True)
+    cols = st.columns(4, gap="medium")
+    typ = {"electric_heat_households": r.baseline.electric_heat_households, "h_human": r.baseline.h_human,
+           "h_econ": r.baseline.h_econ, "households": r.baseline.households}
+    wtd = {"electric_heat_households": r.weighted.electric_heat_households, "h_human": r.weighted.h_human,
+           "h_econ": r.weighted.h_econ, "households": r.weighted.households}
+    vals = {k: lo_metrics[k].tolist() for k in typ}
+    for col, (title, spec) in zip(cols, distribution.specs(vals, typ, wtd)):
+        with col:
+            st.vega_lite_chart(spec, width="stretch")
+    st.caption(distribution.caption(dist))
+
 # ---------------------------------------------------------------- 6. flip strip
-spared, cut_instead = copy.flip_lines(zh, r, H)
+spared, cut_instead = copy.flip_lines(zh, r, H, lo_counts, n_plans)
 with st.container(border=True):
     st.markdown(f"<div class='eyebrow' style='margin-top:.2rem'>Flip strip · {len(spared) + len(cut_instead)} zones differ between the plans</div>",
                 unsafe_allow_html=True)
     f1, f2 = st.columns(2, gap="large")
     with f1:
-        st.markdown("<div class='flipcol'><h4>Kept on in the vulnerability-aware plan (cut in the baseline)</h4>" +
+        st.markdown("<div class='flipcol'><h4>Kept on in the vulnerability-aware plan (cut in the typical load-only plan)</h4>" +
                     "".join(f"<div class='flip'>{x}</div>" for x in spared) + "</div>", unsafe_allow_html=True)
     with f2:
-        st.markdown("<div class='flipcol'><h4>Cut instead (kept on in the baseline)</h4>" +
+        st.markdown("<div class='flipcol'><h4>Cut instead (kept on in the typical load-only plan)</h4>" +
                     "".join(f"<div class='flip'>{x}</div>" for x in cut_instead) + "</div>", unsafe_allow_html=True)
 
 # ---------------------------------------------------------------- 7. three cards
@@ -167,13 +191,14 @@ rows = pd.DataFrame(sens["rows"])
 
 with c1, st.container(border=True):
     st.markdown("<div class='serif' style='font-size:1.2rem;font-weight:700'>Where to plan first</div>", unsafe_allow_html=True)
-    st.markdown("<p class='scaling'>Zones the load-only baseline cuts that the vulnerability-aware plan spares in every setting with "
-                "alpha above 0, most vulnerable first.</p>", unsafe_allow_html=True)
+    st.markdown("<p class='scaling'>Zones the typical load-only plan cuts that the vulnerability-aware plan spares in every setting with "
+                "alpha above 0, most vulnerable first. The last column is how often the equivalent load-only plans cut the zone: it is low, "
+                "because those plans differ a lot, so read the list as an illustration, not a ranking.</p>", unsafe_allow_html=True)
     body = "".join(
         f"<tr><td>{p['zone_id']}</td><td>{p['COUNTY'].replace(' County', '')}</td><td>{p['RPL_THEMES']:.2f}</td>"
         f"<td>{p['share_electric_heat']:.0%}</td><td>{p['occupied_units']:,.0f}</td>"
-        f"<td>{'cut at alpha 0' if p['cut_at_alpha0'] else ''}</td></tr>" for p in sens["priority_list"])
-    st.markdown(f"<table class='t'><tr><th>Zone</th><th>County</th><th>{copy.tip('SVI', 'SVI')}</th><th>Electric heat</th><th>Households</th><th>Note</th></tr>"
+        f"<td>{p['loadonly_cut_share']:.0%}</td><td>{'cut at alpha 0' if p['cut_at_alpha0'] else ''}</td></tr>" for p in sens["priority_list"])
+    st.markdown(f"<table class='t'><tr><th>Zone</th><th>County</th><th>{copy.tip('SVI', 'SVI')}</th><th>Electric heat</th><th>Households</th><th>Load-only plans that cut it</th><th>Note</th></tr>"
                 f"{body}</table>", unsafe_allow_html=True)
     st.markdown("<p class='scaling' style='margin-top:.5rem'><b>This is what the model spares across settings, not a finding about "
                 "specific neighborhoods.</b> Follow-ups to consider: outreach, backup-power planning, resilience-hub siting, "
@@ -205,7 +230,8 @@ with c2, st.container(border=True):
         svi = "n/a (no data)" if pd.isna(z["RPL_THEMES"]) else f"{z['RPL_THEMES']:.3f}"
         eh = "n/a" if pd.isna(z["share_electric_heat"]) else f"{z['share_electric_heat']:.3f}"
         st.markdown(f"**Zone {zid}** · {z['COUNTY']} · tract {z['GEOID']}  \n"
-                    f"Baseline: **{status(r.baseline)}** · Vulnerability-aware plan: **{status(r.weighted)}**")
+                    f"Typical load-only plan: **{status(r.baseline)}** · Vulnerability-aware plan: **{status(r.weighted)}**  \n"
+                    f"{lo_counts.get(zid, 0)} of {n_plans} equivalent load-only plans cut this zone.")
         code = (
             f"inputs  households N = {z['N_households']:,.0f}, SVI = {svi}, electric heat = {eh}, jobs = {z['jobs_total']:,.0f}\n"
             f"load    L = D_NC08 x W / sum(W) = {z['L_mw']:.2f} MW (modeled)\n"
@@ -224,8 +250,8 @@ with c2, st.container(border=True):
                 "differences between the plans. Status is for the census tract zone the building sits in, under the current "
                 "controls.</p>", unsafe_allow_html=True)
     lrows = lookup.lookup_rows(zones, cfg["example_locations"], r)
-    st.markdown("<table class='t'><tr><th>Location</th><th>Zone</th><th>Baseline</th><th>Vulnerability-aware</th></tr>" + "".join(
-        f"<tr><td>{x['label']}</td><td>{x['zone_id']}</td><td>{x['baseline']}</td><td>{x['weighted']}</td></tr>" for x in lrows)
+    st.markdown("<table class='t'><tr><th>Location</th><th>Zone</th><th>Typical load-only</th><th>Vulnerability-aware</th><th>Load-only plans that cut it</th></tr>" + "".join(
+        f"<tr><td>{x['label']}</td><td>{x['zone_id']}</td><td>{x['baseline']}</td><td>{x['weighted']}</td><td>{lo_counts.get(x['zone_id'], 0)} of {n_plans}</td></tr>" for x in lrows)
         + "</table>", unsafe_allow_html=True)
 
 with c3, st.container(border=True):
@@ -235,14 +261,20 @@ with c3, st.container(border=True):
     beat_c = int((rows["econ_change_pct"] < 0).sum())
     more_hh = int((rows["households_change"] > 0).sum())
     zero = rows[rows["human_change_pct"] >= 0]
+    pos = rows[rows["alpha"] > 0]
     cap_row = rows[rows["county_cap"].notna()].iloc[0]
     why = f" (the {len(zero)} that do not set alpha to 0, which ignores human harm)" if len(zero) else ""
+    N = int(rows["n_plans"].iloc[0])
     st.markdown(
-        f"<p style='font-size:.9rem'><b>{beat_h} of {n}</b> settings beat the load-only baseline on human harm{why}; "
-        f"<b>{beat_c} of {n}</b> on interruption cost (2013 dollars). In <b>{more_hh} of {n}</b> the vulnerability-aware plan "
-        f"cuts <b>more</b> households.</p>"
+        f"<p style='font-size:.9rem'><b>{beat_h} of {n}</b> settings beat the typical load-only plan on human harm{why}; "
+        f"<b>{beat_c} of {n}</b> on interruption cost (2013 dollars); in <b>{more_hh} of {n}</b> the vulnerability-aware plan "
+        f"cuts <b>more</b> total households.</p>"
+        f"<p style='font-size:.9rem'>Against all {N} equivalent load-only plans, in the {len(pos)} settings with alpha above 0 it has fewer "
+        f"vulnerability-weighted households than {int(pos['beats_human'].min())} to {int(pos['beats_human'].max())} of them and fewer electric-heat "
+        f"households than {int(pos['beats_ehh'].min())} to {int(pos['beats_ehh'].max())}; on interruption cost it beats "
+        f"{int(pos['beats_cost'].min())} to {int(pos['beats_cost'].max())} (cost matters less as alpha rises).</p>"
         f"<p style='font-size:.9rem'>With the {cap_share:.0%} county cap ON: human harm {cap_row['human_change_pct']:+.0f}%, cost "
-        f"{cap_row['econ_change_pct']:+.0f}%, {cap_row['households_change']:+,.0f} households.</p>"
+        f"{cap_row['econ_change_pct']:+.0f}%, {cap_row['households_change']:+,.0f} households (vs that setting's typical plan).</p>"
         f"<p class='scaling'>Zones the vulnerability-aware plan cuts in every setting: {len(sens['classes']['always'])}; in some: "
         f"{len(sens['classes']['sometimes'])}; never: {len(sens['classes']['never'])}; protected: {len(sens['classes']['protected'])}.</p>",
         unsafe_allow_html=True)
@@ -279,6 +311,12 @@ with st.expander("Methods & sources"):
     st.markdown(f"**Shared target band.** Both plans must cut between T and T + delta, delta = {cfg['optimizer']['band_pct']:.0f}% of T "
                 f"(widened to at most {max(cfg['optimizer']['band_widen_pct']):.0f}% if needed): load is shed in discrete blocks and operators cannot "
                 "hit an exact MW.")
+    lo_meta = A["loadonly_method"]
+    st.markdown(f"**Load-only comparison set.** Many different plans meet the MW target equally well, so one \"load-only baseline\" would be arbitrary. "
+                f"The page compares against {n_plans} distinct plans that meet the target and overshoot it by at most {lo_meta['near_opt_pct']:.0f}% "
+                f"(generated deterministically with a fixed seed and random zone costs; a wide cross-section of the near-optimal plans, not a uniform "
+                f"sample). The left map shows the one closest to the median on four measures (households, electric-heat households, vulnerability-weighted "
+                f"households, interruption cost).")
     st.markdown(f"**Protected facilities.** Zones containing a hospital, nursing home or water treatment plant are never cut "
                 f"({consts['n_protected']} zones). This may protect more modeled load than necessary, and the OpenStreetMap facility "
                 "data may be incomplete. Fire and police stations are not excluded (they commonly have backup generation).")

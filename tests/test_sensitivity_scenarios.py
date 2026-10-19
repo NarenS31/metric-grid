@@ -53,9 +53,10 @@ def test_always_zones_are_cut_in_every_setting_and_never_zones_in_none(sens, row
     assert not any(set(sens["classes"]["protected"]) & s for s in sets)
 
 
-def test_baseline_unchanged_by_harm_settings(rows):
-    nonflat = rows[~rows["flat"] & rows["county_cap"].isna()]
-    assert nonflat["baseline_zone_ids"].map(tuple).nunique() == 1  # baseline ignores alpha, weights and cost class
+def test_typical_load_only_plan_depends_on_harm_weights_but_not_on_alpha(rows):
+    grid = rows[rows["setting"] == "grid"]
+    for w, g in grid.groupby("w_svi"):  # same weights -> same plan set metrics -> the same typical plan for every alpha
+        assert g["baseline_zone_ids"].map(tuple).nunique() == 1 and g["typical_index"].nunique() == 1
 
 
 def test_both_plans_inside_their_band_in_every_setting(rows, consts):
@@ -65,13 +66,11 @@ def test_both_plans_inside_their_band_in_every_setting(rows, consts):
         assert T - 1e-9 <= r.baseline_mw <= hi + 1e-9 and T - 1e-9 <= r.weighted_mw <= hi + 1e-9
 
 
-def test_weighted_plan_cuts_more_households_almost_everywhere_and_we_say_so(rows):
-    """The honest headline: more households, less vulnerable ones. After the 2026-10-19 recomputation one setting
-    (alpha 0.25, w_svi 0.9) is a near tie at 63 FEWER households; the page counts these live."""
-    more = rows["households_change"] > 0
-    assert more.sum() == len(rows) - 1 and rows[~more]["households_change"].abs().max() < 100
+def test_weighted_plan_cuts_more_households_than_the_typical_plan_and_we_say_so(rows):
+    """The honest headline: more households, less vulnerable ones. Counted live on the page; here it holds in every setting."""
+    assert (rows["households_change"] > 0).all()
     d = rows[(rows["setting"] == "grid") & (rows["alpha"] == 0.5) & (rows["w_svi"] == 0.7)].iloc[0]
-    assert d["households_change"] > 2000
+    assert d["households_change"] > 2000 and d["more_households_than"] == d["n_plans"]  # more than every equivalent load-only plan
 
 
 def test_human_harm_lower_except_economic_only_alpha(rows):
@@ -103,7 +102,8 @@ def test_flat_loads_sum_to_d_nc08_and_change_the_answer(consts, rows):
 
 def test_live_rerun_matches_frozen_default_row(rows, consts):
     z = frozen.load_zones()
-    row, _ = sensitivity.run_setting(z, CFG, consts["kw_per_job"], consts["D_NC08_mw"], consts["T_NC08_mw"], "grid", 0.5, 0.7, 2.0)
+    plans = frozen.load_loadonly()["sets"]["elliott|free"]["plans"]
+    row, _ = sensitivity.run_setting(z, CFG, consts["kw_per_job"], consts["D_NC08_mw"], consts["T_NC08_mw"], "grid", 0.5, 0.7, 2.0, plans)
     f = rows[(rows["setting"] == "grid") & (rows["alpha"] == 0.5) & (rows["w_svi"] == 0.7)].iloc[0]
     assert row["weighted_zone_ids"] == f["weighted_zone_ids"] and row["households_change"] == f["households_change"]
 
@@ -131,7 +131,7 @@ def test_scenarios_nested_and_consistent():
 
 def test_scenarios_live_matches_frozen(consts):
     z = frozen.load_zones()
-    sc = scenarios.run_scenarios(z, CFG, consts["kw_per_job"], consts["D_NC08_mw"])
+    sc = scenarios.run_scenarios(z, CFG, consts["kw_per_job"], consts["D_NC08_mw"], frozen.load_loadonly()["sets"])
     froz = frozen.load_scenarios()
     assert sc["cut_in_all"] == froz["cut_in_all"] and sc["only_worst"] == froz["only_worst"]
 
@@ -172,9 +172,11 @@ def test_presolved_grid_complete_and_matches_live_solve(consts):
         for plan in ("baseline", "weighted"):
             assert r["band_lo_mw"] - 1e-9 <= r[plan]["mw_shed"] <= r["band_hi_mw"] + 1e-9
     z = frozen.load_zones()
-    live = optimizer.solve(harm.compute_harm(z, CFG, consts["kw_per_job"]), consts["T_NC08_mw"], 0.5)
+    st = frozen.load_loadonly()["sets"]["elliott|free"]
+    typ = st["plans"][st["typical_index"]]
+    live = optimizer.solve(harm.compute_harm(z, CFG, consts["kw_per_job"]), consts["T_NC08_mw"], 0.5, baseline_ids=typ)
     rec = [r for r in off if r["target_key"] == "elliott" and r["alpha"] == 0.5][0]
-    assert rec["weighted"]["zone_ids"] == live.weighted.zone_ids and rec["baseline"]["zone_ids"] == live.baseline.zone_ids
+    assert rec["weighted"]["zone_ids"] == live.weighted.zone_ids and rec["baseline"]["zone_ids"] == typ
 
 
 def test_presolved_cap_records_respect_the_county_cap():
@@ -214,6 +216,6 @@ def test_priority_list_definition(sens, rows):
 
 def test_priority_list_live_matches_frozen(sens, consts):
     z = frozen.load_zones()
-    res = sensitivity.full_sensitivity(z, CFG, consts["kw_per_job"], consts["D_NC08_mw"], consts["T_NC08_mw"])
+    res = sensitivity.full_sensitivity(z, CFG, consts["kw_per_job"], consts["D_NC08_mw"], consts["T_NC08_mw"], frozen.load_loadonly()["sets"])
     live = sensitivity.priority_list(z, res)
     assert list(live["zone_id"]) == [r["zone_id"] for r in sens["priority_list"]]

@@ -53,6 +53,11 @@ def load_presolved() -> list[dict]:
     return _json("presolved.json")
 
 
+def load_loadonly() -> dict:
+    """The frozen load-only plan sets {key: {plans, typical_index, n, ...}} (see model/loadonly.py)."""
+    return _json("loadonly_plans.json")
+
+
 def load_sensitivity() -> dict:
     """Sensitivity settings table, always/sometimes/never zone classes, and spared zones."""
     return _json("sensitivity.json")

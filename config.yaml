@@ -114,6 +114,13 @@ optimizer:
   load_tol_mw: 0.01           # baseline is least-overshed within 10 kW (finer is not operationally meaningful and 100x slower)
   # Optional county-share cap (toggle, default OFF): no single county takes more than max_share of the total MW cut,
   # applied to both plans equally. A response to cumulative-burden concentration, see docs/ASSUMPTIONS.md.
+  # The load-only comparison set (docs/ASSUMPTIONS.md, "Baseline plan instability"): n_plans distinct plans that meet the target
+  # and overshoot it by at most near_opt_pct of the target, generated with a fixed seed.
+  loadonly:
+    n_plans: 200
+    near_opt_pct: 1.0
+    seed: 20261019
+    spread: 0.5
   county_cap:
     enabled: false
     max_share: 0.5
@@ -143,14 +150,14 @@ nrel:
   reference_hour_local: 6     # the hour STARTING 06:00 local standard time = the hour ENDING 07:00, matching the EIA label (EULP timestamps are period-ending, EST)
 
 # Fixed example locations (no live geocoder). Public buildings only, never home addresses. They were CHOSEN TO ILLUSTRATE
-# DIFFERENCES between the plans (see docs/ASSUMPTIONS.md): one in zone 10 (the load-only baseline cuts it, the vulnerability-aware
-# plan spares it), one in zone 141 in Union County (the vulnerability-aware plan cuts it, the baseline does not), and the Robeson
-# library (kept on under both). The baseline's exact zones are one of many equivalent plans (see "Baseline plan instability" in
-# ASSUMPTIONS.md), so the zone-10 illustration is specific to the plan the optimizer returns. Each point falls inside an NC-08
-# zone (checked in tests). Sources are per location.
+# DIFFERENCES between the vulnerability-aware plan and the TYPICAL load-only plan (see docs/ASSUMPTIONS.md): one in zone 17 (the
+# typical load-only plan cuts it, the vulnerability-aware plan spares it), one in zone 141 in Union County (the vulnerability-aware
+# plan cuts it, the typical load-only plan does not), and the Robeson library (kept on under both). The typical plan is one of many
+# equivalent load-only plans (each zone is cut by only about 5-10% of them), so these illustrations are specific to that plan.
+# Each point falls inside an NC-08 zone (checked in tests). Sources are per location.
 example_locations:
-  - {label: "Central Cabarrus High School, Concord (Cabarrus County)", county: "Cabarrus", address: "505 Highway 49 S, Concord", lat: 35.362435, lon: -80.582429,
-     source: "OpenStreetMap way/385194444 (name, address, centroid), pulled via Overpass 2026-10-19"}
+  - {label: "Harrisburg Fire Department Station 3, Harrisburg (Cabarrus County)", county: "Cabarrus", address: "8045 Rocky River Rd, Harrisburg", lat: 35.302900, lon: -80.604668,
+     source: "OpenStreetMap way/868080437 (name, address, centroid), pulled via Overpass 2026-10-19"}
   - {label: "Hemby Bridge Elementary School, Indian Trail (Union County)", county: "Union", address: "6701 Indian Trail Fairview Rd, Indian Trail", lat: 35.107220, lon: -80.618625,
      source: "OpenStreetMap way/862806256 (name, address, centroid), pulled via Overpass 2026-10-19"}
   - {label: "Robeson County Public Library, Lumberton", county: "Robeson", address: "101 N Chestnut St, Lumberton, NC 28358", lat: 34.617204, lon: -79.007862,

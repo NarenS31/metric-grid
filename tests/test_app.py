@@ -59,7 +59,7 @@ def test_headline_and_honest_line_use_live_numbers(default_page):
 def test_required_district_sentence_and_labels_present(default_page):
     text = page_text(default_page)
     assert provenance.DISTRICT_SENTENCE in text
-    for label in ("Modeled scenario", "North Carolina's 8th District", "Load-only baseline", "Vulnerability-aware plan",
+    for label in ("Modeled scenario", "North Carolina's 8th District", "A typical load-only plan (median of 200 equivalent plans)", "Vulnerability-aware plan",
                   "not Duke's method", "not an operational switching tool", "census tracts, not utility boundaries",
                   "Both plans cut between", "2013 dollars", "Where to plan first", "How robust is this?", "Flip strip"):
         assert label in text, label
@@ -82,7 +82,7 @@ def test_robustness_card_counts_come_from_the_table(default_page):
     import pandas as pd
     rows = pd.DataFrame(frozen.load_sensitivity()["rows"])
     n, beat = len(rows), int((rows["human_change_pct"] < 0).sum())
-    assert f"<b>{beat} of {n}</b> settings beat the load-only baseline on human harm" in page_text(default_page)
+    assert f"<b>{beat} of {n}</b> settings beat the typical load-only plan on human harm" in page_text(default_page)
 
 
 def test_every_number_kind_has_a_source_in_the_drawer(default_page):
@@ -142,27 +142,16 @@ def test_headline_flips_wording_with_the_numbers():
     assert "fewer electric-heat households" in copy.headline(scenarios.record_to_pair(base))
 
 
-def test_get_view_prefers_presolved_and_falls_back_with_a_note(monkeypatch):
+def test_get_view_uses_the_presolved_grid_and_falls_back_with_a_note(monkeypatch):
     from metric_grid.app import data
     A = data.load_all()
     v = data.get_view(0.5, data.pct_options(A["consts"], A["cfg"])[0], False)
-    assert v["source"] == "pre-solved" and v["note"] is None
-    pct = 12.5  # off the slider (the app never offers it): exercises the safety-net path directly
-
-    monkeypatch.setattr(data, "_live_solve", lambda a, t, c: {"error": "ValueError: boom"})
-    v = data.get_view(0.5, pct, False)
-    assert v["source"] == "nearest" and "Showing nearest pre-computed setting" in v["note"] and "boom" in v["note"]
-
-    monkeypatch.setattr(data, "_live_solve", lambda a, t, c: {"infeasible": "too big", "max_feasible_mw": 1.0})
-    assert "too big" in data.get_view(0.5, pct, False)["note"]
-
-    rec = scenarios.pair_to_record(scenarios.record_to_pair(A["presolved"][0]), "live", 0.5)
-    monkeypatch.setattr(data, "_live_solve", lambda a, t, c: {"record": rec, "elapsed": 3.1})
-    slow = data.get_view(0.5, pct, False)
-    assert slow["source"] == "nearest" and "took 3.1 s" in slow["note"]
-
-    monkeypatch.setattr(data, "_live_solve", lambda a, t, c: {"record": rec, "elapsed": 0.4})
-    assert data.get_view(0.5, pct, False)["source"] == "live"
+    assert v["source"] == "pre-solved" and v["note"] is None and v["record"]["loadonly"]["n"] == 200
+    off = data.get_view(0.5, 12.5, False)  # not a slider stop, so not pre-computed
+    assert off["source"] == "nearest" and "not pre-computed" in off["note"] and not off["infeasible"]
+    _with_infeasible_record(monkeypatch)
+    inf = data.get_view(0.5, data.pct_options(A["consts"], A["cfg"])[0], False)
+    assert inf["source"] == "nearest" and inf["infeasible"] and "999.0 MW" in inf["note"]
 
 
 def test_nearest_prefers_same_cap_setting():
@@ -205,9 +194,11 @@ def test_example_locations_illustrate_a_difference_between_the_plans(default_pag
     from metric_grid.config import load_config
     rec = [r for r in frozen.load_presolved() if r["target_key"] == "elliott" and r["alpha"] == 0.5 and not r["cap"]][0]
     rows = {r["zone_id"]: r for r in lookup.lookup_rows(frozen.load_zones(), load_config()["example_locations"], scenarios.record_to_pair(rec))}
-    assert (rows[10]["baseline"], rows[10]["weighted"]) == ("CUT", "kept on")  # spared by the vulnerability-aware plan
-    assert (rows[141]["baseline"], rows[141]["weighted"]) == ("kept on", "CUT")  # cut instead
-    assert (rows[100]["baseline"], rows[100]["weighted"]) == ("kept on", "kept on")  # the Robeson library
+    got = sorted((r["baseline"], r["weighted"]) for r in rows.values())
+    assert got == sorted([("CUT", "kept on"), ("kept on", "CUT"), ("kept on", "kept on")])  # one spared, one cut instead, one unchanged
+    assert (rows[17]["baseline"], rows[17]["weighted"]) == ("CUT", "kept on")  # the Harrisburg fire station: spared
+    assert (rows[141]["baseline"], rows[141]["weighted"]) == ("kept on", "CUT")  # Hemby Bridge: cut instead
+    assert (rows[100]["baseline"], rows[100]["weighted"]) == ("kept on", "kept on")  # the Robeson library: unchanged
     assert "Example locations" in page_text(default_page) and "Demo locations" not in page_text(default_page)
 
 
@@ -229,7 +220,7 @@ def test_example_location_table_shows_status_under_both_plans(default_page):
     rec = [r for r in frozen.load_presolved() if r["target_key"] == "elliott" and r["alpha"] == 0.5 and not r["cap"]][0]
     pair = scenarios.record_to_pair(rec)
     for row in lookup.lookup_rows(frozen.load_zones(), load_config()["example_locations"], pair):
-        assert f"<td>{row['label']}</td><td>{row['zone_id']}</td><td>{row['baseline']}</td><td>{row['weighted']}</td>" in text
+        assert f"<td>{row['label']}</td><td>{row['zone_id']}</td><td>{row['baseline']}</td><td>{row['weighted']}</td><td>" in text
 
 
 def test_tooltips_for_svi_ice_census_tract_zone_and_target_band(default_page):
@@ -239,15 +230,20 @@ def test_tooltips_for_svi_ice_census_tract_zone_and_target_band(default_page):
         assert re.search(rf"class='tip' title=\"[^\"]*{re.escape(needle)}", html), key
 
 
-def test_infeasible_target_shows_explanation_and_nearest_result(monkeypatch):
+def _with_infeasible_record(monkeypatch):
+    """Replace the default (Elliott, alpha 0.5, cap off) pre-solved record with an infeasible one."""
     from metric_grid.app import data
-    real = data.pct_options
-    monkeypatch.setattr(data, "pct_options", lambda c, g: real(c, g) + [12.5])  # a stop that is not pre-solved
-    monkeypatch.setattr(data, "_live_solve", lambda a, t, c: {"infeasible": "Requested 999.0 MW exceeds the unprotected load.",
-                                                               "max_feasible_mw": 1407.5})
-    at = AppTest.from_file(APP, default_timeout=120)
-    at.query_params["pct"] = "12.5"
-    at.run()
+    A = data.load_all()
+    recs = [dict(r) for r in A["presolved"]]
+    for r in recs:
+        if r["target_key"] == "elliott" and r["alpha"] == 0.5 and not r["cap"]:
+            r.update(solved=False, reason="Requested 999.0 MW exceeds the unprotected load.", max_feasible_mw=1407.5)
+    monkeypatch.setitem(A, "presolved", recs)
+
+
+def test_infeasible_target_shows_explanation_and_nearest_result(monkeypatch):
+    _with_infeasible_record(monkeypatch)
+    at = AppTest.from_file(APP, default_timeout=120).run()
     assert not at.exception
     text = page_text(at)
     assert "This target cannot be met" in text and "maximum feasible reduction 1407.5 MW" in text

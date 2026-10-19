@@ -12,27 +12,27 @@ When a utility cannot meet demand it sheds load by opening breakers at substatio
 
 METRIC-Grid takes the observed regional demand curves from that morning (EIA-930), public census vulnerability data, and published interruption-cost figures, scales the regional event down to the district, and solves two plans held to the same MW band:
 
-- a **load-only baseline**: cut the required MW with the least overshoot, ignoring who lives there;
+- **load-only plans**: any way of cutting the required MW with little overshoot, ignoring who lives there (there are very many; the app generates a fixed, reproducible set of 200 and shows the typical one);
 - a **vulnerability-aware plan**: cut the same MW band at the lowest modeled harm.
 
-It shows them side by side on a map of 183 census tract zones, with every assumption exposed in the page and in `docs/ASSUMPTIONS.md`.
+It shows the vulnerability-aware plan next to a typical load-only plan on a map of 183 census tract zones, and against the whole set of load-only plans in a strip chart,, with every assumption exposed in the page and in `docs/ASSUMPTIONS.md`.
 
 **Primary user:** a county emergency planner who wants to know whether two technically equal scenarios could impose very different consequences on vulnerable communities, and who leaves with a short list of zones to prioritize for outreach, warming centers and backup power. **Not for:** utility operators (they would need private network data) or residents (no household prediction).
 
 ## The default scenario (modeled)
 
-Required reduction 91.9 MW (modeled district estimate, scaled to the hour ending 07:00 on Dec 24, 2022), alpha 0.5, both plans cut between 91.9 and 93.8 MW:
+Required reduction 91.9 MW (modeled district estimate, scaled to the hour ending 07:00 on Dec 24, 2022), alpha 0.5, both plans cut between 91.9 and 93.8 MW. Many different plans meet the same MW target equally well, so the app compares the vulnerability-aware plan with **200 equivalent load-only plans** (the left map shows the typical one, the median of the set):
 
-| | Load-only baseline | Vulnerability-aware plan |
-|---|---|---|
-| MW cut | 91.9 | 92.2 |
-| Zones cut | 6 | 10 |
-| Households cut | 15,593 | 17,956 |
-| Electric-heat households cut | 10,029 | 5,484 |
-| Vulnerability-weighted households | 7,578 | 2,053 |
-| Interruption cost (2013 dollars, 1 hour) | $432,943 | $264,733 |
+| | Typical load-only plan | Range over 200 load-only plans | Vulnerability-aware plan |
+|---|---|---|---|
+| MW cut | 92.3 | 91.9 to 92.8 | 92.2 |
+| Zones cut | 11 | | 10 |
+| Households cut | 15,413 | 13,387 to 17,458 | 17,956 |
+| Electric-heat households cut | 8,896 | 6,874 to 11,454 | 5,484 |
+| Vulnerability-weighted households | 7,741 | 4,784 to 11,116 | 2,053 |
+| Interruption cost (2013 dollars, 1 hour) | $417,615 | $260,199 to $731,161 | $264,733 |
 
-**The vulnerability-aware plan cuts MORE households (+2,363) but far fewer vulnerability-weighted and electric-heat households, and costs less.** It also concentrates 88% of its cut in one low-vulnerability county (Union). At alpha 0 (cost only) it does worse than the baseline on human harm. The page says all of this in plain words next to the numbers. **The load-only baseline is one of very many equivalent plans, so the sizes of these differences depend on which one is shown; the directions hold against 120 other plans that meet the same MW band (see `docs/ASSUMPTIONS.md`, "Baseline plan instability").**
+**The vulnerability-aware plan cuts 3,412 fewer electric-heat households than the typical load-only plan, and fewer than all 200 plans; but it cuts MORE total households (+2,543 vs the typical plan, and more than 200 of 200 plans).** It also concentrates 88% of its cut in one low-vulnerability county (Union). At alpha 0 (cost only) it does worse than the typical plan on human harm. The page says all of this in plain words next to the numbers, and shows where the vulnerability-aware plan falls among all 200 load-only plans for each measure. Because one "load-only baseline" would be arbitrary (a 0.02% change in the inputs flipped half of its zones), no single baseline is used as the headline reference; see `docs/ASSUMPTIONS.md`, "Baseline plan instability and the load-only plan set".
 
 ![Trade-off across alpha](docs/figures/alpha_tradeoff.png)
 
@@ -60,7 +60,7 @@ make demo        # opens the app on the frozen scenario (http://localhost:8765)
 
 `requirements.txt` is exactly what the deployed app imports (pinned); `requirements-dev.txt` adds the test, figure and data-refresh tools. **In a clean clone `make test` skips 7 tests and passes the rest:** the seven data-pull checks (tract count, GEOID cleanliness, no silent NaN fills, facility types, the area-join identity check, the saved EIA series, the county table) need the raw downloads in `data/raw/`, which are gitignored; they run after `make data`. The skips say "run `make data` first".
 
-The app reads only `data/frozen/` (committed, about 1 MB). There are no live API calls at runtime and it renders with every network call blocked (a test does exactly that). `make data` (needs `EIA_API_KEY` and `CENSUS_API_KEY` in `.env`) and `make freeze` rebuild the frozen inputs from the public sources; they are only needed to refresh data. Deep links for the controls: `?alpha=1&pct=10&cap=1&zone=23`.
+The app reads only `data/frozen/` (committed, about 1 MB). There are no live API calls at runtime and it renders with every network call blocked (a test does exactly that). `make data` (needs `EIA_API_KEY` and `CENSUS_API_KEY` in `.env`) and `make freeze` rebuild the frozen inputs from the public sources (`make freeze` takes about 6 minutes because it generates the load-only plan sets); they are only needed to refresh data. Deep links for the controls: `?alpha=1&pct=10&cap=1&zone=23`.
 
 ## Data sources and dates
 

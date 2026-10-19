@@ -24,7 +24,7 @@ Every map draws the NC-08 district outline (data/frozen/district.geojson). Amend
 
 Run the app with `make app` (port 8765); screenshots with `scripts/app_screenshots.py` (needs requirements-dev.txt). If the app looks stale after a code change, kill whatever holds port 8765 first.
 
-The load-only baseline is one of very many equivalent plans (tiny weight changes flip its zones); never present its exact zones or the size of the gap as precise. Directions are robust (docs/ASSUMPTIONS.md, "Baseline plan instability").
+There is no single load-only baseline: the app compares the vulnerability-aware plan with a frozen set of 200 equivalent load-only plans (model/loadonly.py) and shows the typical one on the left map. Never present one load-only plan, or the size of a gap, as precise. Rule 3's "load-only baseline" now means this set (docs/ASSUMPTIONS.md, "Baseline plan instability and the load-only plan set").
 
 ## Stack
 Python 3.11, Streamlit, GeoPandas, shapely, PuLP (CBC), pandas, numpy, pydeck, PyYAML (runtime); pytest, matplotlib, requests, Playwright (dev). requirements.txt = exactly the app's runtime imports, pinned; requirements-dev.txt = tests, figures, data refresh; requirements-node.txt = unused node packages. Make targets: data, freeze, test, app, demo, api. Ask before adding anything else.

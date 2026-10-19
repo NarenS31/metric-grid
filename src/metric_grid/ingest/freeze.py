@@ -118,22 +118,28 @@ def _dump(name: str, obj) -> None:
 
 
 def write_model_outputs(cfg: dict, zones: gpd.GeoDataFrame, kw_per_job: float, consts: dict) -> None:
-    """Pre-solve the demo grid, the sensitivity table, the 10/15/20% scenarios and the alpha sweep into data/frozen/."""
+    """Plan sets, the pre-solved demo grid, the sensitivity table, the 10/15/20% scenarios and the alpha sweep -> data/frozen/."""
+    from metric_grid.model import loadonly
+
     z = pd.DataFrame(zones.drop(columns="geometry"))
     D, T = consts["D_NC08_mw"], consts["T_NC08_mw"]
-    _dump("presolved.json", scen.presolve_grid(z, cfg, kw_per_job, D, T))
-    res = sens.full_sensitivity(z, cfg, kw_per_job, D, T)
+    sets = loadonly.build_sets(z, cfg, kw_per_job, D, T)
+    lo = cfg["optimizer"]["loadonly"]
+    _dump("loadonly_plans.json", {"method": {"n_plans": lo["n_plans"], "near_opt_pct": lo["near_opt_pct"], "seed": lo["seed"], "spread": lo["spread"],
+                                             "text": loadonly.__doc__.split("\n\n")[1] + " " + loadonly.__doc__.split("\n\n")[2]},
+                                  "sets": sets})
+    _dump("presolved.json", scen.presolve_grid(z, cfg, kw_per_job, D, T, sets))
+    res = sens.full_sensitivity(z, cfg, kw_per_job, D, T, sets)
     spared = sens.spared_every_setting(z, res, k=10)
     spared_pos = sens.spared_every_setting(z, res, k=10, min_alpha=0.01)
     prio = sens.priority_list(z, res)
     _dump("sensitivity.json", {"rows": res["rows"].to_dict("records"), "classes": res["classes"],
                                "default_baseline_ids": res["default_baseline_ids"], "spared_every_setting": spared.to_dict("records"),
-                               "spared_excluding_alpha0": spared_pos.to_dict("records"),
-                               "priority_list": prio.to_dict("records")})
-    sc = scen.run_scenarios(z, cfg, kw_per_job, D)
+                               "spared_excluding_alpha0": spared_pos.to_dict("records"), "priority_list": prio.to_dict("records")})
+    sc = scen.run_scenarios(z, cfg, kw_per_job, D, sets)
     _dump("scenarios.json", {"rows": sc["rows"].to_dict("records"), "cut_in_all": sc["cut_in_all"], "only_worst": sc["only_worst"],
                              "worst_pct": sc["worst_pct"]})
-    _dump("alpha_sweep.json", sens.alpha_sweep(z, cfg, kw_per_job, D, T).to_dict("records"))
+    _dump("alpha_sweep.json", sens.alpha_sweep(z, cfg, kw_per_job, D, T, sets).to_dict("records"))
     from metric_grid import figures  # matplotlib, only needed at freeze time
 
     figures.alpha_tradeoff_figure(FROZEN / "alpha_tradeoff.png", compact=True)

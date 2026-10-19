@@ -43,7 +43,7 @@ def hatch_features(zones: gpd.GeoDataFrame, spacing: float = 0.0045) -> list[dic
     return feats
 
 
-def zone_collection(zones: gpd.GeoDataFrame, cut_ids: set, plan_name: str) -> dict:
+def zone_collection(zones: gpd.GeoDataFrame, cut_ids: set, plan_name: str, freq: dict | None = None, n_plans: int = 0) -> dict:
     """GeoJSON FeatureCollection with fill/line colours and tooltip text per zone for one plan."""
     feats = []
     for r in zones.itertuples():
@@ -53,12 +53,13 @@ def zone_collection(zones: gpd.GeoDataFrame, cut_ids: set, plan_name: str) -> di
             "fill": list(CUT) + [235] if cut else svi_rgb(r.RPL_THEMES) + [225],
             "line": [250, 247, 242] if not r.protected else INK, "lw": 1 if not r.protected else 1500,  # metres; min 1 px
             "zone": f"Zone {r.zone_id}", "county": r.COUNTY, "status": f"{status} ({plan_name})",
+            "freq": f"cut in {freq.get(r.zone_id, 0)} of {n_plans} load-only plans" if freq is not None else "",
             "load": f"{r.L_mw:.1f} MW (modeled)", "svi": "n/a" if np.isnan(r.RPL_THEMES) else f"{r.RPL_THEMES:.2f}",
             "heat": "n/a" if np.isnan(r.share_electric_heat) else f"{r.share_electric_heat:.0%}", "hh": f"{r.occupied_units:,.0f}"}})
     return {"type": "FeatureCollection", "features": feats}
 
 
-TOOLTIP = {"html": "<b>{zone}</b> · {county}<br/>{status}<br/>Est. load: {load}<br/>SVI: {svi}<br/>Electric heat: {heat}<br/>Households: {hh}",
+TOOLTIP = {"html": "<b>{zone}</b> · {county}<br/>{status}<br/>{freq}<br/>Est. load: {load}<br/>SVI: {svi}<br/>Electric heat: {heat}<br/>Households: {hh}",
            "style": {"backgroundColor": "#1C1A24", "color": "#FAF7F2", "fontSize": "12px", "fontFamily": "sans-serif"}}
 
 
