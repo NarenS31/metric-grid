@@ -158,18 +158,17 @@ if view["note"]:
 # ---------------------------------------------------------------- 3. two maps (inline SVG: no WebGL, no external requests)
 layers = st.cache_resource(lambda: maps.static_layers(zones, A["district"]))()
 mc1, mc2 = st.columns(2, gap="medium")
-for col, title, short, plan, color, mid in (
-        (mc1, f"Megawatts only (typical of {n_plans} plans)", "typical megawatts-only plan", r.baseline, maps.NEUTRAL_CUT, "map-mw"),
-        (mc2, "Vulnerability-aware", "vulnerability-aware plan", r.weighted, maps.VIOLET, "map-va")):
+for col, title, short, plan, mid in (
+        (mc1, f"Megawatts only (typical of {n_plans} plans)", "typical megawatts-only plan", r.baseline, "map-mw"),
+        (mc2, "Vulnerability-aware", "vulnerability-aware plan", r.weighted, "map-va")):
     with col:
-        st.markdown(f"<p class='maptitle'><span class='dot' style='background:{color}'></span>{title}</p>", unsafe_allow_html=True)
-        st.markdown(maps.map_svg(zones, layers, set(plan.zone_ids), color, short, mid, freq=lo_counts if mid == "map-mw" else None,
+        st.markdown(f"<p class='maptitle'>{title}</p>", unsafe_allow_html=True)
+        st.markdown(maps.map_svg(zones, layers, set(plan.zone_ids), short, mid, freq=lo_counts if mid == "map-mw" else None,
                              n_plans=n_plans, label=f"Map of NC-08: {title}"), unsafe_allow_html=True)
         st.markdown(f"<p class='mapnums'>{plan_numbers(plan)}</p>", unsafe_allow_html=True)
 st.markdown(
-    "<div class='legend'><span><span class='sw' style='background:#1E2C48'></span><span class='sw' style='background:#5874A8'></span>kept on (lighter = more vulnerable)</span>"
-    "<span><span class='sw' style='background:#D5DDEB'></span>cut, megawatts only</span>"
-    "<span><span class='sw' style='background:#6EA8FE'></span>cut, vulnerability-aware</span>"
+    "<div class='legend'><span><span class='sw' style='background:#1E2C48'></span><span class='sw' style='background:#506896'></span>kept on (lighter = more vulnerable)</span>"
+    "<span><span class='sw' style='background:#F3BD69'></span>cut (both maps)</span>"
     "<span><span class='sw' style='background:repeating-linear-gradient(45deg,#111A2E,#111A2E 2px,#C9D3E6 2px,#C9D3E6 3px)'></span>hospital or water plant, never cut</span>"
     "<span><span class='sw' style='background:#2A2F3D'></span>no data</span></div>", unsafe_allow_html=True)
 cap_txt = f" · No county takes more than {cap_share:.0%} of either plan's cut" if view["cap_applied"] else ""

@@ -15,8 +15,9 @@ WIDTH = 1000.0          # viewBox width; height follows the district's aspect ra
 SIMPLIFY_DEG = 0.0015
 from metric_grid.app import theme
 
-INK, VIOLET, NEUTRAL_CUT = "#C9D3E6", theme.VULN_AWARE, theme.MW_ONLY   # INK = hatch lines; VIOLET kept as the vulnerability-aware color name
-KEPT_LIGHT, KEPT_DARK, NODATA = np.array([30, 44, 72]), np.array([88, 116, 168]), "#2A2F3D"
+INK = "#C9D3E6"            # hatch lines
+CUT_COLOR = theme.AMBER    # one colour for "cut" on both maps; which plan is which comes from the map titles
+KEPT_LIGHT, KEPT_DARK, NODATA = np.array([30, 44, 72]), np.array([80, 104, 150]), "#2A2F3D"
 
 
 def kept_rgb(svi) -> str:
@@ -75,9 +76,9 @@ def static_layers(zones: gpd.GeoDataFrame, district: gpd.GeoDataFrame) -> dict:
             "outline": "".join(proj.path(g) for g in district.geometry)}
 
 
-def map_svg(zones: gpd.GeoDataFrame, layers: dict, cut_ids: set, cut_color: str, plan_name: str, map_id: str,
+def map_svg(zones: gpd.GeoDataFrame, layers: dict, cut_ids: set, plan_name: str, map_id: str,
             freq: dict | None = None, n_plans: int = 0, label: str = "") -> str:
-    """One map. Cut zones solid `cut_color`; kept-on zones light grey (deeper = more vulnerable); protected zones carry a hatch."""
+    """One map. Cut zones solid `CUT_COLOR` (same on both maps); kept-on zones light grey (deeper = more vulnerable); protected zones carry a hatch."""
     paths = []
     for r in zones.itertuples():
         zid = int(r.zone_id)
@@ -89,7 +90,7 @@ def map_svg(zones: gpd.GeoDataFrame, layers: dict, cut_ids: set, cut_color: str,
         if freq is not None and n_plans:
             tip.append(f"cut in {freq.get(zid, 0)} of {n_plans} megawatts-only plans")
         tip.append(f"Est. load {r.L_mw:.1f} MW (modeled) · SVI {svi} · electric heat {heat} · {r.occupied_units:,.0f} households")
-        fill = cut_color if cut else kept_rgb(r.RPL_THEMES)
+        fill = CUT_COLOR if cut else kept_rgb(r.RPL_THEMES)
         paths.append(f'<path d="{layers["zone_paths"][zid]}" fill="{fill}" stroke="#0B1020" stroke-width="1" '
                      f'stroke-linejoin="round"><title>{html.escape(chr(10).join(tip))}</title></path>')
     hatch = f'<path d="{layers["hatch"]}" fill="none" stroke="{INK}" stroke-width="0.8" stroke-opacity="0.6" pointer-events="none"/>'
