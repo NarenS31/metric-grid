@@ -66,9 +66,16 @@ def main() -> int:
             hits = [w for w in BANNED if re.search(re.escape(w), text_all.replace(REQUIRED_SENTENCE, ""), re.I)]
             # Streamlit scrolls an inner container, so grow the viewport to the content height for a full-page shot
             height = page.evaluate("document.querySelector('[data-testid=stMain]').scrollHeight")
-            page.set_viewport_size({"width": 1440, "height": int(height)})
+            page.set_viewport_size({"width": 1440, "height": int(height) + 500})
             page.wait_for_timeout(4000)
-            page.screenshot(path=str(out / f"{name}.png"))
+            # Crop to the part of the page that tells the story, at full width, so the PNG stays legible under the size limit:
+            # the top ~1,900 px (headline, maps, distribution strips) for every state except the zone detail (the cards row).
+            if name == "app_zone_detail":
+                box = page.get_by_text("Zone detail", exact=True).first.bounding_box()
+                clip = {"x": 0, "y": max(box["y"] - 40, 0), "width": 1440, "height": 780}
+            else:
+                clip = {"x": 0, "y": 0, "width": 1440, "height": 1900}
+            page.screenshot(path=str(out / f"{name}.png"), clip=clip)
             if name == "app_default":  # the demand panel, cropped from the full-height page
                 box = page.get_by_text("Why forecasts aren't enough").first.bounding_box()
                 page.screenshot(path=str(out / "app_demand_panel.png"),
