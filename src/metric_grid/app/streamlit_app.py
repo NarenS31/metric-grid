@@ -13,11 +13,24 @@ from metric_grid.model import harm
 from metric_grid.model.optimizer import PairResult, PlanResult
 from metric_grid.model.scenarios import county_breakdown, plain_summary
 
-st.set_page_config(page_title="METRIC-Grid", page_icon=None, layout="wide", initial_sidebar_state="collapsed")
-st.markdown(theme.CSS, unsafe_allow_html=True)
+def _page_icon():
+    """Favicon: the wordmark's 3x3 grid as a tiny image (no file needed)."""
+    from PIL import Image, ImageDraw
+    img = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    for row in range(3):
+        for col in range(3):
+            on = (row + col) == 2
+            d.rounded_rectangle([4 + col * 20, 4 + row * 20, 20 + col * 20, 20 + row * 20], radius=3, fill=theme.BLUE if on else theme.BORDER)
+    return img
+
+
+st.set_page_config(page_title="METRIC-Grid", page_icon=_page_icon(), layout="wide", initial_sidebar_state="auto")
+st.markdown(theme.css(), unsafe_allow_html=True)
 
 try:
-    A = data.load_all()
+    with st.spinner("Loading the frozen data…"):
+        A = data.load_all()
 except (FileNotFoundError, OSError) as exc:  # missing-data state: say exactly what to do, never a stack trace
     st.markdown("<div class='eyebrow'>METRIC-Grid</div><div class='headline'>The frozen data is missing.</div>", unsafe_allow_html=True)
     st.error(f"The app reads only the files in data/frozen/ and could not open them ({exc}). "
@@ -57,8 +70,8 @@ def reset_demo() -> None:
 init_state()
 
 
-def tile(value: str, label: str, sub: str) -> str:
-    return f"<div class='tile'><div class='v'>{value}</div><div class='l'>{label}</div><div class='s'>{sub}</div></div>"
+def tile(value: str, label: str, sub: str, cls: str = "") -> str:
+    return f"<div class='tile {cls}'><div class='v'>{value}</div><div class='l'>{label}</div><div class='s'>{sub}</div></div>"
 
 
 def stat_tiles(r: PairResult) -> str:
@@ -69,26 +82,26 @@ def stat_tiles(r: PairResult) -> str:
     harm_pct = 100 * (1 - w.h_human / b.h_human) if b.h_human else 0.0
     hh = w.households - b.households
     return "<div class='tiles'>" + "".join([
-        tile(f"{r.target_mw:.0f} MW", "cut by both plans", f"both plans cut {r.band_lo_mw:.1f} to {r.band_hi_mw:.1f} MW"),
+        tile(f"{r.target_mw:.0f} MW", "Cut by both plans", f"both plans cut {r.band_lo_mw:.1f} to {r.band_hi_mw:.1f} MW"),
         tile(f"{abs(ehh):,.0f}", "fewer electric-heat homes in the dark" if ehh >= 0 else "MORE electric-heat homes in the dark",
-             "vs the typical megawatts-only plan"),
+             "vs the typical megawatts-only plan", "good" if ehh >= 0 else "attn"),
         tile(f"{abs(harm_pct):.0f}%", "less vulnerability-weighted harm" if harm_pct >= 0 else "MORE vulnerability-weighted harm",
-             "vs the typical megawatts-only plan"),
+             "vs the typical megawatts-only plan", "good" if harm_pct >= 0 else "attn"),
         tile(f"{'+' if hh >= 0 else '-'}{abs(hh):,.0f}", "more total homes cut" if hh >= 0 else "fewer total homes cut",
-             "vs the typical megawatts-only plan")]) + "</div>"
+             "vs the typical megawatts-only plan", "attn")]) + "</div>"
 
 
 def plan_numbers(p: PlanResult) -> str:
     return f"{p.mw_shed:.1f} MW · {p.households:,.0f} homes · {p.electric_heat_households:,.0f} electric-heat homes"
 
 
-def section(title: str, lede: str) -> None:
-    st.markdown(f"<div class='sec'><h2>{title}</h2><p class='lede'>{lede}</p></div>", unsafe_allow_html=True)
+def section(title: str, lede: str, anchor: str, source: tuple[str, str] | None = None) -> None:
+    """Section heading with an anchor for the sidebar navigation, one sentence of explanation and (optionally) the kind of data shown."""
+    src = f"<p class='src'><span class='kind'>{source[0]}</span> · {source[1]}</p>" if source else ""
+    st.markdown(f"<div class='sec' id='{anchor}'><h2>{title}</h2><p class='lede'>{lede}</p>{src}</div>", unsafe_allow_html=True)
 
 
-# ---------------------------------------------------------------- 1. top bar, headline, subhead
-st.markdown("<div class='topbar'><span class='brand'>METRIC-Grid</span><span class='pill'>NC-08 · Modeled scenario</span></div>", unsafe_allow_html=True)
-
+# ---------------------------------------------------------------- 1. sidebar shell
 # controls are read from session state before they are drawn, so the tiles above them can use the current result
 def _pct() -> float:
     return st.session_state["pct"] if st.session_state.get("pct") is not None else ELLIOTT_PCT
@@ -102,10 +115,28 @@ n_plans, lo_counts, lo_metrics = dist["n"], A["lo_counts"][rec["loadonly_key"]],
 H = st.session_state["alpha"] * zh["Hhat_human"] + (1 - st.session_state["alpha"]) * zh["Hhat_econ"]
 H.index = zh["zone_id"]
 
-when = pd.Timestamp(consts["scenario"]["date"]).strftime("%b %d %Y").replace(" 0", " ")
-st.markdown("<div class='headline'>Same power cut. Different people in the dark.</div>", unsafe_allow_html=True)
-st.markdown(f"<p class='subhead'>{consts['scenario']['name'].split(',')[0]}, {when}: two ways to cut the same {r.target_mw:.0f} MW across NC-08.</p>",
-            unsafe_allow_html=True)
+when = pd.Timestamp(consts["scenario"]["date"]).strftime("%b %d, %Y").replace(" 0", " ")
+NAV = [("overview", "Overview"), ("compare", f"Compared with {n_plans} plans"), ("priority", "Priority zones"), ("lookup", "Look up a zone"),
+       ("robust", "How robust is this?")] + ([("forecast", "Why forecasts aren't enough")] if A["panel"] else []) + [("methods", "Methods & sources")]
+with st.sidebar:
+    st.markdown(f"<div class='brand'>{theme.LOGO_SVG}<span class='name'>Metric<b>Grid</b></span></div>"
+                "<nav class='nav' aria-label='Sections'>" + "".join(f"<a href='#{k}'>{v}</a>" for k, v in NAV) + "</nav>"
+                f"<div class='side-meta'>Modeled planning scenario for North Carolina's 8th Congressional District.<span class='k'>Scenario date</span>"
+                f"<span class='mono'>{consts['scenario']['date']}</span><span class='k'>Data built</span><span class='mono'>{consts['built_utc'][:10]}</span>"
+                "<span class='k'>Runs offline from frozen public data.</span></div>", unsafe_allow_html=True)
+
+# ---------------------------------------------------------------- 2. page header and the primary insight
+ehh_gap = r.baseline.electric_heat_households - r.weighted.electric_heat_households
+hh_gap = r.weighted.households - r.baseline.households
+insight = (f"{consts['scenario']['name'].split(',')[0]}, {when}: two ways to cut the same {r.target_mw:.0f} MW across NC-08. "
+           f"Against the typical megawatts-only plan, the vulnerability-aware plan puts <b>{abs(ehh_gap):,.0f} {'fewer' if ehh_gap >= 0 else 'MORE'}</b> "
+           f"electric-heat homes in the dark and cuts <b>{abs(hh_gap):,.0f} {'more' if hh_gap >= 0 else 'fewer'}</b> homes in total.")
+st.markdown(
+    "<div id='overview' class='pagehead'><div><p class='crumb'>NC-08 · Modeled scenario</p>"
+    "<h1 class='title'>Same power cut. Different people in the dark.</h1>"
+    f"<p class='deck'>{insight}</p></div>"
+    f"<div class='fresh'>Data built <span class='mono'>{consts['built_utc'][:10]}</span><br/>Scenario <span class='mono'>{consts['scenario']['date']}</span></div></div>",
+    unsafe_allow_html=True)
 st.markdown(stat_tiles(r), unsafe_allow_html=True)
 
 # ---------------------------------------------------------------- 2. one slim controls bar
@@ -127,20 +158,20 @@ if view["note"]:
 # ---------------------------------------------------------------- 3. two maps (inline SVG: no WebGL, no external requests)
 layers = st.cache_resource(lambda: maps.static_layers(zones, A["district"]))()
 mc1, mc2 = st.columns(2, gap="medium")
-for col, title, cls, short, plan, color, mid in (
-        (mc1, f"Megawatts only (typical of {n_plans} plans)", "", "typical megawatts-only plan", r.baseline, maps.NEUTRAL_CUT, "map-mw"),
-        (mc2, "Vulnerability-aware", " v", "vulnerability-aware plan", r.weighted, maps.VIOLET, "map-va")):
+for col, title, short, plan, color, mid in (
+        (mc1, f"Megawatts only (typical of {n_plans} plans)", "typical megawatts-only plan", r.baseline, maps.NEUTRAL_CUT, "map-mw"),
+        (mc2, "Vulnerability-aware", "vulnerability-aware plan", r.weighted, maps.VIOLET, "map-va")):
     with col:
-        st.markdown(f"<p class='maptitle{cls}'>{title}</p>", unsafe_allow_html=True)
+        st.markdown(f"<p class='maptitle'><span class='dot' style='background:{color}'></span>{title}</p>", unsafe_allow_html=True)
         st.markdown(maps.map_svg(zones, layers, set(plan.zone_ids), color, short, mid, freq=lo_counts if mid == "map-mw" else None,
                              n_plans=n_plans, label=f"Map of NC-08: {title}"), unsafe_allow_html=True)
         st.markdown(f"<p class='mapnums'>{plan_numbers(plan)}</p>", unsafe_allow_html=True)
 st.markdown(
-    "<div class='legend'><span><span class='sw' style='background:#F5F2EC'></span><span class='sw' style='background:#C4BCB0'></span>kept on (darker = more vulnerable)</span>"
-    "<span><span class='sw' style='background:#2B2833'></span>cut, megawatts only</span>"
-    "<span><span class='sw' style='background:#5B3FD6'></span>cut, vulnerability-aware</span>"
-    "<span><span class='sw' style='background:repeating-linear-gradient(45deg,#fff,#fff 2px,#1C1A24 2px,#1C1A24 3px)'></span>hospital or water plant, never cut</span>"
-    "<span><span class='sw' style='background:#E4E0E8'></span>no data</span></div>", unsafe_allow_html=True)
+    "<div class='legend'><span><span class='sw' style='background:#1E2C48'></span><span class='sw' style='background:#5874A8'></span>kept on (lighter = more vulnerable)</span>"
+    "<span><span class='sw' style='background:#D5DDEB'></span>cut, megawatts only</span>"
+    "<span><span class='sw' style='background:#6EA8FE'></span>cut, vulnerability-aware</span>"
+    "<span><span class='sw' style='background:repeating-linear-gradient(45deg,#111A2E,#111A2E 2px,#C9D3E6 2px,#C9D3E6 3px)'></span>hospital or water plant, never cut</span>"
+    "<span><span class='sw' style='background:#2A2F3D'></span>no data</span></div>", unsafe_allow_html=True)
 cap_txt = f" · No county takes more than {cap_share:.0%} of either plan's cut" if view["cap_applied"] else ""
 st.markdown(f"<p class='fine'>Modeled planning scenario · not Duke's method · not an operational switching tool · details in Methods{cap_txt}</p>",
             unsafe_allow_html=True)
@@ -148,11 +179,12 @@ st.markdown(f"<p class='fine'>Modeled planning scenario · not Duke's method · 
 # ---------------------------------------------------------------- 4a. distribution strip
 section(f"Compared with {n_plans} megawatts-only plans",
         "Many different plans meet the same megawatt target, so no single megawatts-only plan is the answer. Each grey dot is one of them; "
-        "the violet circle is the vulnerability-aware plan.")
+        "the blue circle is the vulnerability-aware plan.", "compare",
+        ("Derived", "solved from modeled zone loads and public census, CDC, LBNL and LODES data; hover a dot for its value"))
 st.markdown(f"<div class='honest'>{copy.range_line(dist)}<br/>{plain_summary(r)}</div>", unsafe_allow_html=True)
-st.markdown("<div class='legend'><span><span class='sw' style='background:#8D8A99;border-radius:50%'></span>each megawatts-only plan</span>"
-            "<span><span class='sw' style='background:#1C1A24;transform:rotate(45deg)'></span>the typical one (left map)</span>"
-            "<span><span class='sw' style='background:#5B3FD6;border-radius:50%'></span>vulnerability-aware plan</span></div>", unsafe_allow_html=True)
+st.markdown("<div class='legend'><span><span class='sw' style='background:#6B7C96;border-radius:50%'></span>each megawatts-only plan</span>"
+            "<span><span class='sw' style='background:#D5DDEB;transform:rotate(45deg)'></span>the typical one (left map)</span>"
+            "<span><span class='sw' style='background:#6EA8FE;border-radius:50%'></span>vulnerability-aware plan</span></div>", unsafe_allow_html=True)
 typ = {"electric_heat_households": r.baseline.electric_heat_households, "h_human": r.baseline.h_human,
        "h_econ": r.baseline.h_econ, "households": r.baseline.households}
 wtd = {"electric_heat_households": r.weighted.electric_heat_households, "h_human": r.weighted.h_human,
@@ -172,7 +204,8 @@ rows = pd.DataFrame(sens["rows"])
 pcfg = cfg["priority_list"]
 section("Vulnerable zones most often cut when only megawatts count",
         f"Zones with a CDC Social Vulnerability Index (SVI) of {pcfg['svi_min']:.2f} or more, or an electric-heat share of "
-        f"{pcfg['electric_heat_min']:.0%} or more, ranked by how many of the {n_plans} megawatts-only plans cut them.")
+        f"{pcfg['electric_heat_min']:.0%} or more, ranked by how many of the {n_plans} megawatts-only plans cut them.", "priority",
+        ("Derived", "SVI is CDC/ATSDR; electric-heat share is an American Community Survey estimate; cut counts come from the plan set"))
 with st.container(border=True):
     body = "".join(
         f"<tr><td>{p['zone_id']}</td><td>{p['COUNTY'].replace(' County', '')}</td><td>{p['RPL_THEMES']:.2f}</td>"
@@ -180,8 +213,8 @@ with st.container(border=True):
         f"<td>{p['loadonly_cut_share']:.0%} ({p['loadonly_cut_count']} of {n_plans})</td>"
         f"<td>{'Yes' if p['vuln_aware_cuts'] else 'No'} (cut in {p['vuln_aware_cut_settings']} of {p['n_settings']} settings)</td></tr>"
         for p in sens["priority_list"])
-    st.markdown(f"<table class='t'><tr><th>Zone</th><th>County</th><th>{copy.tip('SVI', 'SVI')}</th><th>Electric heat</th><th>Households</th>"
-                f"<th>% of megawatts-only plans that cut it</th><th>Vulnerability-aware plan cuts it?</th></tr>{body}</table>", unsafe_allow_html=True)
+    st.markdown(f"<div class='prio'><table class='t'><tr><th>Zone</th><th>County</th><th>{copy.tip('SVI', 'SVI')}</th><th>Electric heat</th><th>Households</th>"
+                f"<th>% of megawatts-only plans that cut it</th><th>Vulnerability-aware plan cuts it?</th></tr>{body}</table></div>", unsafe_allow_html=True)
     st.markdown("<p class='fine'><b>The megawatts-only plans are not a uniform sample of all such plans, so these frequencies are indicative, not exact.</b> "
                 "This is what the model shows, not a finding about specific neighborhoods. Follow-ups to consider: outreach, backup-power "
                 "planning, resilience-hub siting, request utility network data. Never a switching recommendation.</p>", unsafe_allow_html=True)
@@ -196,8 +229,9 @@ with st.expander(f"All {len(spared) + len(cut_instead)} zones that differ betwee
                     "".join(f"<div class='flip'>{x}</div>" for x in cut_instead) + "</div>", unsafe_allow_html=True)
 
 # ---------------------------------------------------------------- 4c. look up a zone
-section("Look up a zone", "Pick any zone to see its status under each plan and the arithmetic behind its score, or check three example public buildings.")
-z1, z2 = st.columns([1.1, 1], gap="large")
+section("Look up a zone", "Pick any zone to see its status under each plan and the arithmetic behind its score, or check three example public buildings.", "lookup",
+        ("Modeled", "load is a modeled district estimate; household and job counts are ACS and LODES values"))
+z1, z2 = st.columns([1, 1.25], gap="large")
 with z1, st.container(border=True):
     zid_opts = [0] + [int(i) for i in sorted(zh["zone_id"])]
     zlab = zh.set_index("zone_id")["COUNTY"]
@@ -239,12 +273,13 @@ with z2, st.container(border=True):
                 "differences between the plans. Status is for the census tract zone the building sits in, under the current "
                 "controls.</p>", unsafe_allow_html=True)
     lrows = lookup.lookup_rows(zones, cfg["example_locations"], r)
-    st.markdown("<table class='t'><tr><th>Location</th><th>Zone</th><th>Typical megawatts-only</th><th>Vulnerability-aware</th><th>Megawatts-only plans that cut it</th></tr>" + "".join(
+    st.markdown("<div class='loc'><table class='t'><tr><th>Location</th><th>Zone</th><th>Typical megawatts-only</th><th>Vulnerability-aware</th><th>Megawatts-only plans that cut it</th></tr>" + "".join(
         f"<tr><td>{x['label']}</td><td>{x['zone_id']}</td><td>{x['baseline']}</td><td>{x['weighted']}</td><td>{lo_counts.get(x['zone_id'], 0)} of {n_plans}</td></tr>" for x in lrows)
-        + "</table>", unsafe_allow_html=True)
+        + "</table></div>", unsafe_allow_html=True)
 
 # ---------------------------------------------------------------- 4d. robustness
-section("How robust is this?", f"We re-ran the comparison under {len(rows)} different settings of the controls and assumptions. Here is how often the result holds.")
+section("How robust is this?", f"We re-ran the comparison under {len(rows)} different settings of the controls and assumptions. Here is how often the result holds.", "robust",
+        ("Calculated", "each setting re-solves both plans; changes are relative to that setting's typical megawatts-only plan"))
 n = len(rows)
 beat_h = int((rows["human_change_pct"] < 0).sum())
 beat_c = int((rows["econ_change_pct"] < 0).sum())
@@ -257,7 +292,7 @@ N = int(rows["n_plans"].iloc[0])
 x1, x2 = st.columns([1, 1.1], gap="large")
 with x1, st.container(border=True):
     st.markdown(
-        f"<p><b>{beat_h} of {n}</b> settings beat the typical megawatts-only plan on vulnerability-weighted households{why}; "
+        f"<p style='margin:0'><b>{beat_h} of {n}</b> settings beat the typical megawatts-only plan on vulnerability-weighted households{why}; "
         f"<b>{beat_c} of {n}</b> on interruption cost (2013 dollars); in <b>{more_hh} of {n}</b> the vulnerability-aware plan "
         f"cuts <b>more</b> total households.</p>"
         f"<p class='fine'>Against all {N} megawatts-only plans, in the {len(pos)} settings that weigh people at risk at all it has fewer "
@@ -271,26 +306,27 @@ with x1, st.container(border=True):
         unsafe_allow_html=True)
 with x2, st.container(border=True):
     st.markdown("**Moving the slider, plan by plan**")
-    st.markdown("<div class='legend'><span><span class='sw' style='background:#5B3FD6;border-radius:50%'></span>vulnerability-weighted households</span>"
-                "<span><span class='sw' style='background:#D98E04;border-radius:50%'></span>interruption cost (2013 dollars)</span>"
-                "<span><span class='sw' style='background:#8D8A99;border-radius:50%'></span>total households cut</span></div>", unsafe_allow_html=True)
+    st.markdown("<div class='legend'><span><span class='sw' style='background:#6EA8FE;border-radius:50%'></span>vulnerability-weighted households</span>"
+                "<span><span class='sw' style='background:#70E1C8;border-radius:50%'></span>interruption cost (2013 dollars)</span>"
+                "<span><span class='sw' style='background:#F3BD69;border-radius:50%'></span>total households cut</span></div>", unsafe_allow_html=True)
     st.vega_lite_chart(distribution.tradeoff_spec(A["sweep"]), width="stretch")
     st.caption("Below zero = less. The plan cuts MORE total households at every slider position.")
 
 # ---------------------------------------------------------------- 4e. demand panel (hidden if its frozen file is missing)
 panel = A["panel"]
 if panel:
-    section("Why forecasts aren't enough", panel["label"])
+    section("Why forecasts aren't enough", panel["label"], "forecast",
+            ("Observed + modeled", "demand is observed EIA-930 data; the prediction line is this project's model, trained without the Elliott month"))
     pc1, pc2 = st.columns([1.7, 1], gap="large")
     with pc1, st.container(border=True):
         st.vega_lite_chart(demand_panel.chart_spec(panel), width="stretch")
     with pc2:
         st.markdown(f"<p class='honest'>{demand_panel.sentence(panel, demand_panel.total_shed_mw(consts))}</p>", unsafe_allow_html=True)
-        st.markdown(demand_panel.temperature_table(panel), unsafe_allow_html=True)
+        st.markdown(f"<div class='tmp'>{demand_panel.temperature_table(panel)}</div>", unsafe_allow_html=True)
         st.markdown(f"<p class='fine'>{demand_panel.coldest_note(panel)}</p>", unsafe_allow_html=True)
 
 # ---------------------------------------------------------------- 4f. methods & sources (everything technical)
-st.markdown("<div class='sec'></div>", unsafe_allow_html=True)
+st.markdown("<div class='sec' id='methods'></div>", unsafe_allow_html=True)
 with st.expander("Methods & sources"):
     g = consts["groups"]
     st.markdown("**This is not Duke's method, not an operational switching tool, and the zones are census tracts, not utility "
@@ -320,7 +356,7 @@ with st.expander("Methods & sources"):
                 f"({consts['n_protected']} zones, {consts['protected_load_mw'] / consts['D_NC08_mw']:.1%} of modeled load). This may protect more modeled load than necessary, and the OpenStreetMap facility "
                 "data may be incomplete. Fire and police stations are not excluded (they commonly have backup generation).")
     st.markdown(f"**Data and map notes.** Scenario date {consts['scenario']['date']}; data built {consts['built_utc'][:10]}. Maps are drawn from the census tracts shown whole "
-                "(the violet line is the NC-08 outline); hover a zone for its details.")
+                "(the teal line is the NC-08 outline); hover a zone for its details.")
     for w in A["warnings"]:
         st.markdown(f"Data note: {w}")
     with st.expander("Stress test: all settings"):

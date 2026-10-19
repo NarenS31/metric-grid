@@ -162,6 +162,7 @@ def test_requirements_txt_is_exactly_the_runtime_imports_and_pinned():
     reqs = _requirement_names("requirements.txt")
     assert all(re.fullmatch(r"[A-Za-z0-9_.\-]+==[0-9][A-Za-z0-9_.]*", r) for r in reqs), reqs
     names = {r.split("==")[0].lower().replace("pyyaml", "yaml") for r in reqs}
+    names = {"PIL" if n == "pillow" else n for n in names}
     assert names == _runtime_third_party_imports()
     for unused in ("scipy", "pyarrow", "fastapi", "uvicorn", "httpx", "python-kasa", "pytest", "matplotlib", "requests", "playwright"):
         assert unused not in names

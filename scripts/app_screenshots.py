@@ -57,7 +57,7 @@ def main() -> int:
             page.on("request", lambda rq: external.add(rq.url.split("/")[2]) if not rq.url.startswith(("http://localhost", "data:", "blob:")) else None)
             page.on("console", lambda m: console_errors.append(m.text) if m.type == "error" else None)
             page.goto(BASE + query, wait_until="domcontentloaded")
-            page.wait_for_selector(".headline", timeout=60000)
+            page.wait_for_selector(".title", timeout=60000)
             page.get_by_text(proof).first.wait_for(timeout=60000)
             page.wait_for_timeout(3000)  # let the page settle
             sw = page.evaluate("[document.documentElement.scrollWidth, document.documentElement.clientWidth]")

@@ -13,12 +13,14 @@ from shapely.geometry.base import BaseGeometry
 
 WIDTH = 1000.0          # viewBox width; height follows the district's aspect ratio
 SIMPLIFY_DEG = 0.0015
-INK, VIOLET, NEUTRAL_CUT = "#1C1A24", "#5B3FD6", "#2B2833"
-KEPT_LIGHT, KEPT_DARK, NODATA = np.array([245, 242, 236]), np.array([196, 188, 176]), "#E4E0E8"
+from metric_grid.app import theme
+
+INK, VIOLET, NEUTRAL_CUT = "#C9D3E6", theme.VULN_AWARE, theme.MW_ONLY   # INK = hatch lines; VIOLET kept as the vulnerability-aware color name
+KEPT_LIGHT, KEPT_DARK, NODATA = np.array([30, 44, 72]), np.array([88, 116, 168]), "#2A2F3D"
 
 
 def kept_rgb(svi) -> str:
-    """Warm light grey (low SVI) to a deeper warm grey (high SVI); lightness is monotonic, so it also reads in greyscale."""
+    """Dark slate (low SVI) to a lighter blue-slate (high SVI); lightness is monotonic, so it also reads in greyscale."""
     if svi is None or (isinstance(svi, float) and math.isnan(svi)):
         return NODATA
     t = float(min(max(svi, 0.0), 1.0))
@@ -88,11 +90,11 @@ def map_svg(zones: gpd.GeoDataFrame, layers: dict, cut_ids: set, cut_color: str,
             tip.append(f"cut in {freq.get(zid, 0)} of {n_plans} megawatts-only plans")
         tip.append(f"Est. load {r.L_mw:.1f} MW (modeled) · SVI {svi} · electric heat {heat} · {r.occupied_units:,.0f} households")
         fill = cut_color if cut else kept_rgb(r.RPL_THEMES)
-        paths.append(f'<path d="{layers["zone_paths"][zid]}" fill="{fill}" stroke="#FFFDF9" stroke-width="1.2" '
+        paths.append(f'<path d="{layers["zone_paths"][zid]}" fill="{fill}" stroke="#0B1020" stroke-width="1" '
                      f'stroke-linejoin="round"><title>{html.escape(chr(10).join(tip))}</title></path>')
-    hatch = f'<path d="{layers["hatch"]}" fill="none" stroke="{INK}" stroke-width="0.8" stroke-opacity="0.75" pointer-events="none"/>'
-    outline = f'<path d="{layers["outline"]}" fill="none" stroke="{VIOLET}" stroke-width="3" stroke-linejoin="round" pointer-events="none"/>'
+    hatch = f'<path d="{layers["hatch"]}" fill="none" stroke="{INK}" stroke-width="0.8" stroke-opacity="0.6" pointer-events="none"/>'
+    outline = f'<path d="{layers["outline"]}" fill="none" stroke="{theme.TEAL}" stroke-width="2" stroke-linejoin="round" pointer-events="none"/>'
     h = layers["proj"].height
     return (f'<svg class="map" id="{map_id}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {WIDTH:.0f} {h}" role="img" '
-            f'aria-label="{html.escape(label)}" preserveAspectRatio="xMidYMid meet"><rect width="{WIDTH:.0f}" height="{h}" fill="#FAF7F2"/>'
+            f'aria-label="{html.escape(label)}" preserveAspectRatio="xMidYMid meet"><rect width="{WIDTH:.0f}" height="{h}" fill="{theme.SURFACE}"/>'
             + "".join(paths) + hatch + outline + "</svg>")
