@@ -69,6 +69,37 @@ def zone_map_figure(out_path=ROOT / "docs" / "figures" / "zone_map_L.png") -> No
     fig.savefig(out_path, dpi=130)
 
 
+def alpha_tradeoff_figure(out_path=ROOT / "docs" / "figures" / "alpha_tradeoff.png") -> None:
+    """Percent change of the harm-weighted plan vs the load-only baseline across alpha. Reads data/frozen only.
+
+    Shows the households-cut change next to the harm numbers: the weighted plan cuts MORE households at every alpha.
+    """
+    import pandas as pd
+
+    from metric_grid import frozen
+
+    df = pd.DataFrame(frozen.load_alpha_sweep())
+    fig, ax = plt.subplots(figsize=(9, 5.2))
+    ax.axhline(0, color="black", lw=0.8)
+    ax.plot(df["alpha"], df["human_change_pct"], marker="o", color="#0072B2", lw=2.2, label="Vulnerability-weighted households cut")
+    ax.plot(df["alpha"], df["econ_change_pct"], marker="s", color="#E69F00", lw=2.2, label="Interruption cost (2013 dollars)")
+    ax.plot(df["alpha"], df["households_change_pct"], marker="^", color="#555555", lw=1.8, ls="--", label="Households cut (all households)")
+    for _, r in df.iterrows():
+        ax.annotate(f"{r['households_change']:+,.0f} hh", (r["alpha"], r["households_change_pct"]), textcoords="offset points",
+                    xytext=(0, 8), ha="center", fontsize=8, color="#555555")
+    ax.set_xticks(df["alpha"])
+    ax.set_xlabel("alpha   (0 = economic cost only  <->  1 = human harm only)")
+    ax.set_ylabel("Harm-weighted plan vs load-only baseline (%)")
+    ax.set_title("Same MW target, different burden (modeled)\nBelow zero = less modeled harm; the weighted plan cuts MORE households at every alpha",
+                 fontsize=10)
+    ax.legend(loc="upper right", fontsize=8)
+    ax.grid(alpha=0.25)
+    fig.tight_layout()
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out_path, dpi=130)
+
+
 if __name__ == "__main__":
     demand_figure()
     zone_map_figure()
+    alpha_tradeoff_figure()

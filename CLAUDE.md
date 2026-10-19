@@ -18,6 +18,8 @@
 9. No claims of predicting failures, sensing the grid, verifying zones, or controlling utility equipment. **Banned words:** "privacy-preserving," "federated learning," "AI optimizer," "conventional plan," "circuit," "feeder," "service area," "neighborhood demand," "least harm," "outage plan." (Banned list quoted in this file and docs/SPEC.md is exempt from the lint test; the exact district-scaling sentence in rule 4 is required.) **Use:** load-only baseline; synthetic analysis zone; estimated zone load; modeled district estimate; lowest modeled harm; planning scenario.
 10. Keep docs/AI_DISCLOSURE.md current: every AI tool (Claude, Claude Code, Perplexity), per-file status (AI-scaffolded / AI-assisted / author-written) and what the author changed.
 
+UI copy rules: every dollar figure is labeled "2013 dollars". Anywhere vulnerability or cost results are shown, state plainly how many households each plan cuts (the harm-weighted plan cuts MORE households, +2,513 by default): use `scenarios.plain_summary`; never imply it cuts fewer people. The demo grid is pre-solved at `make freeze` (data/frozen/presolved.json).
+
 Every map draws the NC-08 district outline (data/frozen/district.geojson). Amendments to docs/SPEC.md live in this file and docs/ASSUMPTIONS.md.
 
 ## Stack

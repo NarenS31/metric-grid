@@ -59,6 +59,40 @@ Both plans use the same band: T_NC08 <= sum x_i L_i <= T_NC08 + delta, delta = 2
 
 16 zones differ between the plans. The harm-weighted plan cuts more households but less vulnerable ones (mean SVI 0.03 vs 0.52). Band sensitivity (1%, 2%, 5%): identical plans, so the harm difference survives. Alpha sweep: at alpha 0 (economic only) the weighted plan imposes +50% human harm while saving 69% of economic cost; at alpha 1 it saves 83% of human harm and 2% of cost.
 
+## Sensitivity, scenarios, pre-solved grid (Phase 4 steps 3-4; all in data/frozen/)
+
+**Spec deviation (approved 2026-10-18): the demo safety-net grid is pre-solved at `make freeze`, not at app startup.** The 10/15/20% presets take 2 to 3 s per solve, so solving 15 points at startup would take about 40 s. `presolved.json` holds 20 points: alpha {0, .25, .5, .75, 1} x targets {Elliott T_NC08, 10%, 15%, 20% of D_NC08}; the Elliott row is added because it is the default scenario. The app falls back to the nearest point (with a visible "showing nearest pre-computed setting" note) if a live solve errors or exceeds 2 s.
+
+**Sensitivity settings (19, weighted plan vs load-only baseline at T_NC08 = 91.9 MW):** alpha {0, .25, .5, .75, 1} x w_svi {.5, .7, .9} (15); band 1% and 5% (2% is in the grid); Small C&I cost rate; flat allocation weights (1 per housing unit + 1 per job instead of 5.43 and 1.39 kW, renormalized to the same D_NC08; this also changes the baseline).
+- **Zone classes by the weighted plan's cuts:** always cut in every setting: 0. Sometimes: 36. Never cut although selectable: 121. Protected (never selectable): 26. The most frequently cut zones are 144 and 178 (15 of 19 settings each).
+- **Human harm:** the weighted plan has lower vulnerability-weighted households cut in 16 of 19 settings (-53% to -91%). It is HIGHER (+49% to +50%) in the three alpha = 0 settings, where human harm is ignored by construction. It beats the baseline on interruption cost in all 19 settings.
+- **Households:** the weighted plan cuts MORE households in all 19 settings (+87 to +6,799; +2,513, +16%, in the default setting). Every UI place that shows vulnerability or cost results must say so plainly next to those numbers (`scenarios.plain_summary` builds the sentence from the numbers and says "MORE" or "fewer" as the data says).
+- **Band 1% / 2% / 5%:** identical plans. **Small C&I cost rate:** same plan, interruption cost change -54% instead of -43%. **Flat allocation:** baseline 5 zones vs weighted 12 zones, human harm -61%, cost -26%, +6,799 households; so the allocation assumption matters, but the direction does not change.
+- **Baseline cut zones the weighted plan spares in every setting:** zones 23 (Cabarrus, SVI 0.83, electric heat 62%, 2,308 households), 32, 142, 12. Zones 8 (Anson, SVI 0.91, electric heat 67%, 1,498 households) and 10 (Cabarrus, SVI 0.64, 62%, 3,178 households) are spared in every setting except alpha = 0.
+- **Where the cuts land (default).** Baseline: Cabarrus 4 zones (63.7 MW, 11,516 households, mean SVI 0.48), Anson 1 (8.7 MW, 1,498 households, SVI 0.91), Union 1 (19.6 MW, 2,429 households, SVI 0.29). Weighted: Union 9 zones (81.5 MW, 15,910 households, mean SVI 0.04) and Mecklenburg 1 (10.7 MW, 2,046 households, SVI 0.01). The weighted plan concentrates its cuts in one county with very low vulnerability, which is a fairness concern of its own (cumulative burden on one place), and it is a version 2.0 item.
+
+**Scenarios (alpha 0.5):**
+
+| Target | MW | Zones cut (baseline / weighted) | Households (baseline / weighted) | Human harm | Interruption cost (2013$) |
+|---|---|---|---|---|---|
+| 10% of D_NC08 | 168.6 | 11 / 18 | 26,824 / 30,405 | -69% | -43% |
+| 15% | 252.9 | 17 / 27 | 41,422 / 46,247 | -62% | -39% |
+| 20% | 337.3 | 23 / 38 | 52,950 / 61,216 | -62% | -36% |
+
+Zones cut in all three scenarios: baseline 11, weighted 18. Zones cut only in the 20% scenario: baseline 8, weighted 11. The weighted plan cuts more households in every scenario.
+
+**Alpha sweep (`docs/figures/alpha_tradeoff.png`, T_NC08, default weights):**
+
+| alpha | Human harm change | Interruption cost change | Households cut change |
+|---|---|---|---|
+| 0 | +50% | -69% | +2,256 (+15%) |
+| 0.25 | -64% | -54% | +215 (+1%) |
+| 0.5 | -74% | -43% | +2,513 (+16%) |
+| 0.75 | -81% | -17% | +1,772 (+12%) |
+| 1 | -83% | -2% | +1,202 (+8%) |
+
+**Dollar labeling.** Every dollar figure in the UI is labeled "2013 dollars" (ICE report dollars, not inflated).
+
 ## Data-source failures and fallbacks
 See
 ## Phase 1 data decisions and fallbacks (2026-10-18)

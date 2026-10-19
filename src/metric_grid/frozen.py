@@ -32,3 +32,27 @@ def load_demand() -> pd.DataFrame:
 def load_district() -> gpd.GeoDataFrame:
     """NC-08 boundary (WGS84, simplified), drawn as an outline on every map."""
     return gpd.read_file(FROZEN / "district.geojson")
+
+
+def _json(name: str):
+    return json.loads((FROZEN / name).read_text())
+
+
+def load_presolved() -> list[dict]:
+    """Pre-solved grid (alpha x target) used as the fallback when a live solve fails or is slow."""
+    return _json("presolved.json")
+
+
+def load_sensitivity() -> dict:
+    """Sensitivity settings table, always/sometimes/never zone classes, and spared zones."""
+    return _json("sensitivity.json")
+
+
+def load_scenarios() -> dict:
+    """10/15/20% scenario rows and cut-in-all / only-worst zone lists."""
+    return _json("scenarios.json")
+
+
+def load_alpha_sweep() -> list[dict]:
+    """alpha sweep rows (percent change in human harm and economic cost, households cut)."""
+    return _json("alpha_sweep.json")

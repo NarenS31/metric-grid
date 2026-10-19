@@ -1,6 +1,7 @@
 """Phase 3.4 `make freeze`: write the only runtime inputs to data/frozen/ from data/raw/processed/.
 
-Outputs: district.geojson (NC-08 outline), zones.geojson (zones + attributes + L_i), facilities.geojson, demand_groups.csv, temp_kclt.csv, constants.json.
+Outputs: district.geojson (NC-08 outline), zones.geojson (zones + attributes + L_i), facilities.geojson, demand_groups.csv, temp_kclt.csv, constants.json,
+and model outputs presolved.json, sensitivity.json, scenarios.json, alpha_sweep.json.
 """
 import json
 from datetime import datetime, timezone
@@ -14,6 +15,8 @@ from metric_grid.geometry import zones as zmod
 from metric_grid.ingest import eia930, footprints
 from metric_grid.ingest.common import PROCESSED
 from metric_grid.model import load_allocation as la
+from metric_grid.model import scenarios as scen
+from metric_grid.model import sensitivity as sens
 
 SIMPLIFY_DEG = 0.0001  # ~10 m: keeps files small; geometry is for display, areas are not recomputed from it
 
@@ -101,7 +104,31 @@ def freeze() -> dict:
         "datasets": DATASETS,
     }
     (FROZEN / "constants.json").write_text(json.dumps(consts, indent=2, default=str))
+    write_model_outputs(cfg, zones, kwj, consts)
     return consts
+
+
+def _dump(name: str, obj) -> None:
+    def conv(o):
+        return o.item() if hasattr(o, "item") else str(o)
+    (FROZEN / name).write_text(json.dumps(obj, indent=1, default=conv))
+
+
+def write_model_outputs(cfg: dict, zones: gpd.GeoDataFrame, kw_per_job: float, consts: dict) -> None:
+    """Pre-solve the demo grid, the sensitivity table, the 10/15/20% scenarios and the alpha sweep into data/frozen/."""
+    z = pd.DataFrame(zones.drop(columns="geometry"))
+    D, T = consts["D_NC08_mw"], consts["T_NC08_mw"]
+    _dump("presolved.json", scen.presolve_grid(z, cfg, kw_per_job, D, T))
+    res = sens.full_sensitivity(z, cfg, kw_per_job, D, T)
+    spared = sens.spared_every_setting(z, res, k=10)
+    spared_pos = sens.spared_every_setting(z, res, k=10, min_alpha=0.01)
+    _dump("sensitivity.json", {"rows": res["rows"].to_dict("records"), "classes": res["classes"],
+                               "default_baseline_ids": res["default_baseline_ids"], "spared_every_setting": spared.to_dict("records"),
+                               "spared_excluding_alpha0": spared_pos.to_dict("records")})
+    sc = scen.run_scenarios(z, cfg, kw_per_job, D)
+    _dump("scenarios.json", {"rows": sc["rows"].to_dict("records"), "cut_in_all": sc["cut_in_all"], "only_worst": sc["only_worst"],
+                             "worst_pct": sc["worst_pct"]})
+    _dump("alpha_sweep.json", sens.alpha_sweep(z, cfg, kw_per_job, D, T).to_dict("records"))
 
 
 if __name__ == "__main__":

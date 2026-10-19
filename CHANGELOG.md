@@ -9,3 +9,4 @@
 - Phase 2b: two footprint groups (DEC: DUK; DEP: CPLE+CPLW) from EIA-861; per-group r from ORS/FERC-NERC (1,000 / 961 MW); district scaling D_NC08=1,686 MW, T_NC08=91.9 MW; demand figure (matplotlib); tests.
 - Phase 3: tract zones (substation layer unavailable), option-(a) protected flags, L_i from two-utility scaling (sum L_i = D_NC08), `make freeze` to data/frozen/, zone map figure, app shell with offline render test.
 - Phase 4.1-4.2: harm model (ICE-sourced costs) and two-plan optimizer with a shared target band replacing exact T* (spec change; exact-equality check showed ~5e12 feasible subsets but a 34 s solve); band sensitivity; district outline on maps; protected-zone constraint bug found and fixed by tests.
+- Phase 4.3-4.4: sensitivity (19 settings, always/sometimes/never), scenarios 10/15/20%, alpha sweep + alpha_tradeoff.png, pre-solved grid and model outputs written at `make freeze` (spec deviation, approved), plain-language honesty summary.

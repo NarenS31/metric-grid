@@ -1,0 +1,110 @@
+{
+ "rows": [
+  {
+   "target_pct": 10,
+   "target_mw": 168.63147134492036,
+   "solved": true,
+   "band_hi_mw": 172.00410077181877,
+   "baseline_mw": 168.6402178295393,
+   "weighted_mw": 169.0920799350052,
+   "baseline_zones": 11,
+   "weighted_zones": 18,
+   "baseline_households": 26824.0,
+   "weighted_households": 30405.0,
+   "human_change_pct": -68.86039405640612,
+   "econ_change_pct": -43.217525019043855,
+   "zones_differ": 27
+  },
+  {
+   "target_pct": 15,
+   "target_mw": 252.94720701738058,
+   "solved": true,
+   "band_hi_mw": 258.0061511577282,
+   "baseline_mw": 252.9571230448747,
+   "weighted_mw": 253.04554609848367,
+   "baseline_zones": 17,
+   "weighted_zones": 27,
+   "baseline_households": 41422.0,
+   "weighted_households": 46247.0,
+   "human_change_pct": -62.24957384703761,
+   "econ_change_pct": -39.01815476755828,
+   "zones_differ": 38
+  },
+  {
+   "target_pct": 20,
+   "target_mw": 337.2629426898407,
+   "solved": true,
+   "band_hi_mw": 344.00820154363754,
+   "baseline_mw": 337.265876910046,
+   "weighted_mw": 337.40669242803347,
+   "baseline_zones": 23,
+   "weighted_zones": 38,
+   "baseline_households": 52950.0,
+   "weighted_households": 61216.0,
+   "human_change_pct": -62.06508451072203,
+   "econ_change_pct": -36.04013817756041,
+   "zones_differ": 51
+  }
+ ],
+ "cut_in_all": {
+  "baseline": [
+   7,
+   10,
+   12,
+   23,
+   28,
+   32,
+   41,
+   70,
+   111,
+   125,
+   142
+  ],
+  "weighted": [
+   16,
+   36,
+   37,
+   56,
+   60,
+   70,
+   72,
+   137,
+   141,
+   144,
+   145,
+   154,
+   169,
+   171,
+   172,
+   173,
+   178,
+   181
+  ]
+ },
+ "only_worst": {
+  "baseline": [
+   11,
+   66,
+   72,
+   102,
+   103,
+   151,
+   156,
+   166
+  ],
+  "weighted": [
+   14,
+   20,
+   39,
+   45,
+   48,
+   50,
+   52,
+   58,
+   151,
+   174,
+   183
+  ]
+ },
+ "worst_pct": 20
+}

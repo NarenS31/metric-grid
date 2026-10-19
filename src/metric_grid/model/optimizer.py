@@ -108,9 +108,11 @@ def _summarize(name, zones: pd.DataFrame, chosen: list, target: float) -> PlanRe
 
 
 def solve(zones: pd.DataFrame, target_mw: float, alpha: float, band_pct: float = 2.0,
-          widen_pct: tuple = (3.0, 4.0, 5.0), max_seconds: float = 10.0, load_tol_mw: float = 0.01) -> "PairResult | Infeasible":
+          widen_pct: tuple = (3.0, 4.0, 5.0), max_seconds: float = 10.0, load_tol_mw: float = 0.01,
+          baseline_ids: list | None = None) -> "PairResult | Infeasible":
     """Solve both plans in one shared band. `zones` needs zone_id, L_mw, protected, H_human, H_econ, Hhat_human,
-    Hhat_econ, N_households, heat_electricity, jobs_total (see harm.compute_harm)."""
+    Hhat_econ, N_households, heat_electricity, jobs_total (see harm.compute_harm). The baseline does not depend on alpha or
+    the harm weights, so callers re-solving many harm settings may pass `baseline_ids` to skip Stage A."""
     t0 = time.perf_counter()
     z = zones.sort_values("zone_id").reset_index(drop=True)
     free = z[~z["protected"]]
@@ -129,7 +131,9 @@ def solve(zones: pd.DataFrame, target_mw: float, alpha: float, band_pct: float =
     steps = [band_pct] + [w for w in widen_pct if w > band_pct]
     for pct in steps:
         lo, hi = target_mw, target_mw * (1 + pct / 100)
-        a = _solve_stage(ids, L, prot, lo, hi, L, load_tol_mw, max_seconds)
+        a = list(baseline_ids) if baseline_ids is not None else _solve_stage(ids, L, prot, lo, hi, L, load_tol_mw, max_seconds)
+        if baseline_ids is not None and not lo - 1e-9 <= sum(L[i] for i in a) <= hi + 1e-9:
+            a = _solve_stage(ids, L, prot, lo, hi, L, load_tol_mw, max_seconds)  # supplied baseline is outside this band
         if a is None:
             continue
         b = _solve_stage(ids, L, prot, lo, hi, Hd, 1e-4, max_seconds)
